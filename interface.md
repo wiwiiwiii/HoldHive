@@ -550,4 +550,3 @@ curl -X GET "http://localhost:8080/api/v1/portfolio/performance?period=3M"
 
 ---
 
-这份接口文档涵盖了项目需求中的核心功能，并且前后端都可以基于它并行开发。需要我继续提供 **Spring Data JPA 对应的实体类和 Repository 代码**，还是 **前端调用这些 API 的 TypeScript 类型定义**？
