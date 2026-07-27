@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:holdhive}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:holdhive}
+    password: ${DB_PASSWORD:holdhive}
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
