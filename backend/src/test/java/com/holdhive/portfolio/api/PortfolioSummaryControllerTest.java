@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.holdhive.portfolio.application.PortfolioSummary;
 import com.holdhive.portfolio.application.PortfolioSummaryService;
+import com.holdhive.portfolio.domain.AssetType;
 import com.holdhive.portfolio.domain.PortfolioAllocation;
 import com.holdhive.portfolio.domain.UnpricedHolding;
 import com.holdhive.portfolio.domain.ValuationStatus;
@@ -53,10 +54,12 @@ class PortfolioSummaryControllerTest {
             .andExpect(jsonPath("$.totalUnrealizedGainLossPercent").value(11.69212691))
             .andExpect(jsonPath("$.priceAsOf").value("2026-07-24T08:29:00Z"))
             .andExpect(jsonPath("$.allocations[0].holdingId").value(101))
+            .andExpect(jsonPath("$.allocations[0].assetType").value("STOCK"))
             .andExpect(jsonPath("$.allocations[0].ticker").value("AAPL"))
             .andExpect(jsonPath("$.allocations[0].marketValue").value(2102.50000000))
             .andExpect(jsonPath("$.allocations[0].allocationPercent").value(56.02931379))
             .andExpect(jsonPath("$.unpricedHoldings[0].holdingId").value(103))
+            .andExpect(jsonPath("$.unpricedHoldings[0].assetType").value("STOCK"))
             .andExpect(jsonPath("$.unpricedHoldings[0].ticker").value("UNKNOWN"))
             .andExpect(jsonPath("$.unpricedHoldings[0].reason").value("PRICE_UNAVAILABLE"));
 
@@ -91,12 +94,13 @@ class PortfolioSummaryControllerTest {
             List.of(
                 new PortfolioAllocation(
                     101L,
+                    AssetType.STOCK,
                     "AAPL",
                     new BigDecimal("2102.50000000"),
                     new BigDecimal("56.02931379")
                 )
             ),
-            List.of(new UnpricedHolding(103L, "UNKNOWN", "PRICE_UNAVAILABLE"))
+            List.of(new UnpricedHolding(103L, AssetType.STOCK, "UNKNOWN", "PRICE_UNAVAILABLE"))
         );
     }
 }

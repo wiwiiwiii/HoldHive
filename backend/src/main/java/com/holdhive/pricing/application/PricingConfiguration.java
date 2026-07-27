@@ -21,6 +21,10 @@ class PricingConfiguration {
             Map.of(
                 "105.AAPL", new BigDecimal("210.25"),
                 "105.MSFT", new BigDecimal("330.00"),
+                "105.VOO", new BigDecimal("510.40"),
+                "MF:FXAIX", new BigDecimal("205.35"),
+                "CRYPTO:BTC", new BigDecimal("67500.00"),
+                "CRYPTO:ETH", new BigDecimal("3650.00"),
                 "1.600519", new BigDecimal("1680.00"),
                 "0.000001", new BigDecimal("12.34")
             ),

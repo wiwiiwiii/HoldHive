@@ -18,6 +18,6 @@ class PortfolioApplicationConfiguration {
     @Bean
     @ConditionalOnMissingBean(PortfolioHoldingReader.class)
     PortfolioHoldingReader portfolioHoldingReader() {
-        return new EmptyPortfolioHoldingReader();
+        return new DemoPortfolioHoldingReader();
     }
 }

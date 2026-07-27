@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.holdhive.portfolio.domain.PortfolioCalculator;
 import com.holdhive.portfolio.domain.ValuationStatus;
+import com.holdhive.portfolio.domain.AssetType;
 import com.holdhive.pricing.application.PriceMode;
 import com.holdhive.pricing.application.PricingService;
 import com.holdhive.pricing.domain.MarketQuote;
@@ -46,9 +47,9 @@ class PortfolioSummaryServiceTest {
             "My Portfolio",
             "USD",
             List.of(
-                new HoldingPosition(101L, "AAPL", "105.AAPL", new BigDecimal("10"), new BigDecimal("175.50")),
-                new HoldingPosition(102L, "MSFT", "105.MSFT", new BigDecimal("5"), new BigDecimal("300.00")),
-                new HoldingPosition(103L, "UNKNOWN", "UNKNOWN", new BigDecimal("2"), new BigDecimal("500.00"))
+                new HoldingPosition(101L, AssetType.STOCK, "AAPL", "105.AAPL", new BigDecimal("10"), new BigDecimal("175.50")),
+                new HoldingPosition(102L, AssetType.STOCK, "MSFT", "105.MSFT", new BigDecimal("5"), new BigDecimal("300.00")),
+                new HoldingPosition(103L, AssetType.STOCK, "UNKNOWN", "UNKNOWN", new BigDecimal("2"), new BigDecimal("500.00"))
             )
         ));
         when(pricingService.getQuotes(List.of("105.AAPL", "105.MSFT", "UNKNOWN"))).thenReturn(List.of(
@@ -88,12 +89,53 @@ class PortfolioSummaryServiceTest {
         assertThat(summary.totalUnrealizedGainLossPercent()).isEqualByComparingTo("11.69212691");
         assertThat(summary.priceAsOf()).isEqualTo(OBSERVED_AT);
         assertThat(summary.allocations()).hasSize(2);
+        assertThat(summary.allocations()).extracting(allocation -> allocation.assetType())
+            .containsExactly(AssetType.STOCK, AssetType.STOCK);
         assertThat(summary.unpricedHoldings()).singleElement()
             .satisfies(unpriced -> {
                 assertThat(unpriced.holdingId()).isEqualTo(103L);
+                assertThat(unpriced.assetType()).isEqualTo(AssetType.STOCK);
                 assertThat(unpriced.ticker()).isEqualTo("UNKNOWN");
                 assertThat(unpriced.reason()).isEqualTo("PRICE_UNAVAILABLE");
             });
         verify(pricingService).getQuotes(List.of("105.AAPL", "105.MSFT", "UNKNOWN"));
+    }
+
+    @Test
+    void valuesCashAndBankDepositsWithoutRequestingExternalQuotes() {
+        when(holdingReader.findDefaultPortfolio()).thenReturn(new PortfolioSnapshot(
+            1L,
+            "My Portfolio",
+            "USD",
+            List.of(
+                new HoldingPosition(101L, AssetType.STOCK, "AAPL", "105.AAPL", new BigDecimal("10"), new BigDecimal("175.50")),
+                new HoldingPosition(201L, AssetType.CASH, "USD", "USD", new BigDecimal("4500.00"), BigDecimal.ONE),
+                new HoldingPosition(202L, AssetType.BANK_DEPOSIT, "HSBC_USD", "HSBC_USD", new BigDecimal("3000.00"), BigDecimal.ONE)
+            )
+        ));
+        when(pricingService.getQuotes(List.of("105.AAPL"))).thenReturn(List.of(
+            new MarketQuote(
+                "EASTMONEY",
+                "105.AAPL",
+                "AAPL",
+                "Apple Inc.",
+                "USD",
+                new BigDecimal("210.25"),
+                PriceStatus.LIVE,
+                OBSERVED_AT
+            )
+        ));
+
+        PortfolioSummary summary = service.getSummary(PriceMode.BEST_AVAILABLE);
+
+        assertThat(summary.valuationStatus()).isEqualTo(ValuationStatus.COMPLETE);
+        assertThat(summary.holdingCount()).isEqualTo(3);
+        assertThat(summary.pricedHoldingCount()).isEqualTo(3);
+        assertThat(summary.totalCostBasis()).isEqualByComparingTo("9255.00000000");
+        assertThat(summary.totalMarketValue()).isEqualByComparingTo("9602.50000000");
+        assertThat(summary.totalUnrealizedGainLoss()).isEqualByComparingTo("347.50000000");
+        assertThat(summary.allocations()).extracting(allocation -> allocation.assetType())
+            .containsExactly(AssetType.STOCK, AssetType.CASH, AssetType.BANK_DEPOSIT);
+        verify(pricingService).getQuotes(List.of("105.AAPL"));
     }
 }

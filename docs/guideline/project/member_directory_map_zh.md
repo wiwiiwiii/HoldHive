@@ -14,7 +14,7 @@
 优先任务：
 
 1. 用 Flyway 建表，保证空 MySQL 可自动迁移。
-2. 实现 holdings 查询、新增、删除 API。
+2. 实现 holdings 查询、新增、删除 API，并让 `assetType`、`providerQuoteId`、`currency` 正确落库。
 3. 保持 DTO 与 `docs/guideline/project/api_documentation_zh.md` 一致。
 
 不要直接改：
@@ -34,14 +34,15 @@
 
 优先任务：
 
-1. 实现组合市值、成本、盈亏和配置占比计算。
-2. 实现 demo/market pricing adapter 的可替换边界。
-3. 用 JUnit、Mockito、MockMvc 把核心路径覆盖到 JaCoCo 70% 以上。
+1. 实现股票、ETF、场外基金、加密资产、现金和银行存款的市值、成本、盈亏和配置占比计算。
+2. 实现 demo/market pricing adapter 的可替换边界；现金和银行存款固定按 `1.00` 估值，加密资产先支持 demo/cache price。
+3. 实现基金穿透 demo endpoint，用于前端展示基金底层股票提醒；真实披露源后续替换。
+4. 用 JUnit、Mockito、MockMvc 把核心路径覆盖到 JaCoCo 70% 以上。
 
 不要直接改：
 
 - 已合并的 Flyway migration。
-- 前端页面组件。
+- 前端页面组件，除非接口字段已经变更且需要同步最小类型或联调展示。
 
 ## 成员 C：前端页面 + 联调
 
@@ -56,7 +57,7 @@
 优先任务：
 
 1. 通过 `src/api` 统一访问后端，不在组件里拼接 URL。
-2. 实现 Dashboard、持仓表、添加表单、删除确认、状态提示和图表。
+2. 实现 Dashboard、持仓表、添加表单、删除确认、状态提示和图表，并展示 `STOCK / ETF / CRYPTO / CASH` 标签和筛选。
 3. 用 fixture/mock 先开发，再切换到真实 API 联调。
 
 不要直接改：
@@ -90,7 +91,7 @@
 ## 共享规则
 
 - 跨负责人目录改动必须在 PR 描述中说明原因。
-- API 字段变更必须同步后端 DTO、前端 `types.ts`、API 文档和测试。
+- API 字段变更必须同步后端 DTO、前端 `types.ts`、API 文档和测试；`assetType` 新增或改名必须由 A/B/C 共同确认。
 - 数据库变更只新增 migration，不修改已被他人 pull 的旧 migration。
 - 本地启动不依赖 Docker；每人使用自己的本机 MySQL。
 - `main`、`qa`、`prod` 不直接 push，全部通过 PR。
