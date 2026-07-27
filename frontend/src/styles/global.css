@@ -1,0 +1,146 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #172033;
+  background: #f6f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button {
+  font: inherit;
+}
+
+code {
+  border-radius: 8px;
+  background: #fff4d6;
+  color: #8a5700;
+  padding: 2px 6px;
+}
+
+.app-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+.hero-card,
+.metric-card {
+  border: 1px solid #e1e5ee;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(23, 32, 51, 0.08);
+}
+
+.hero-card {
+  padding: 32px;
+}
+
+.brand-row,
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-mark {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f6b33b, #ffd66b);
+  color: #172033;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #8a5700;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 1;
+}
+
+.hero-copy {
+  max-width: 760px;
+  margin: 24px 0;
+  color: #58627a;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #172033;
+  color: #ffffff;
+}
+
+.secondary-button {
+  border: 1px solid #d8deea;
+  background: #ffffff;
+  color: #172033;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.metric-card {
+  padding: 22px;
+}
+
+.metric-card p,
+.metric-card span {
+  color: #687086;
+}
+
+.metric-card p {
+  margin: 0 0 12px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 2rem;
+}
+
+@media (max-width: 760px) {
+  .brand-row,
+  .action-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
