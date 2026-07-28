@@ -47,6 +47,7 @@ public class HoldingCommandService {
                 normalized.ticker(),
                 normalized.exchangeCode()
             )
+            .map(existingInstrument -> refreshMarketMetadata(existingInstrument, normalized))
             .orElseGet(() -> instrumentRepository.saveAndFlush(new InstrumentEntity(
                 normalized.assetType(),
                 normalized.ticker(),
@@ -72,6 +73,34 @@ public class HoldingCommandService {
         } catch (DataIntegrityViolationException exception) {
             throw duplicateHolding(normalized.ticker());
         }
+    }
+
+    private InstrumentEntity refreshMarketMetadata(
+        InstrumentEntity instrument,
+        NormalizedHolding normalized
+    ) {
+        instrument.refreshMarketMetadata(
+            normalized.displayName(),
+            normalized.provider(),
+            normalized.providerQuoteId(),
+            normalized.currency()
+        );
+        return instrumentRepository.saveAndFlush(instrument);
+    }
+
+    @Transactional
+    public Long updateHolding(UpdateHoldingCommand command) {
+        HoldingEntity holding = holdingRepository.findById(command.holdingId())
+            .orElseThrow(() -> notFound(command.holdingId()));
+        BigDecimal averagePurchasePrice = holding.getInstrument().getAssetType().isFixedValueAsset()
+            ? FIXED_PRICE
+            : command.averagePurchasePrice();
+        holding.updateQuantityAndAveragePurchasePrice(
+            scale(command.quantity()),
+            scale(averagePurchasePrice)
+        );
+        holdingRepository.saveAndFlush(holding);
+        return holding.getId();
     }
 
     @Transactional

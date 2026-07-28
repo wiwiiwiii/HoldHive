@@ -288,7 +288,42 @@ Location: /api/v1/holdings/101
 - `400 VALIDATION_FAILED`
 - `409 HOLDING_ALREADY_EXISTS`
 
-### 4.4 删除持仓
+### 4.4 修改持仓数量和平均成本
+
+```http
+PATCH /api/v1/holdings/{holdingId}?priceMode=DEMO_ALLOWED
+Content-Type: application/json
+```
+
+请求：
+
+```json
+{
+  "quantity": 8.00000000,
+  "averagePurchasePrice": 320.00000000
+}
+```
+
+可选查询参数：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `priceMode` | `BEST_AVAILABLE` | 控制响应体估值口径；本地演示价格使用 `DEMO_ALLOWED` |
+
+规则：
+
+- 只修改持仓的 `quantity` 和 `averagePurchasePrice`，不改变 `assetType`、`ticker`、`exchangeCode` 或 `providerQuoteId`。
+- `quantity` 必填且大于 0。
+- `averagePurchasePrice` 必填且大于等于 0。
+- `CASH` 和 `BANK_DEPOSIT` 始终保持 `averagePurchasePrice = 1.00000000`，即使请求里提交了其他值。
+- 成功响应为更新后的 `Holding`，并按请求的 `priceMode` 返回 `currentPrice`、`marketValue`、`priceStatus` 等估值字段。
+
+失败：
+
+- `400 VALIDATION_FAILED`
+- `404 HOLDING_NOT_FOUND`
+
+### 4.5 删除持仓
 
 ```http
 DELETE /api/v1/holdings/{holdingId}
@@ -299,7 +334,7 @@ DELETE /api/v1/holdings/{holdingId}
 
 重复删除返回 `404`，客户端可以据此刷新本地列表。删除持仓不会删除证券主数据或价格历史。
 
-### 4.5 查询组合摘要
+### 4.6 查询组合摘要
 
 ```http
 GET /api/v1/portfolio/summary
@@ -315,7 +350,7 @@ GET /api/v1/portfolio/summary
 
 即使部分价格不可用也返回 `200` 和 `valuationStatus = PARTIAL`，因为持仓和部分估值仍可使用。只有调用方明确要求 `LIVE_ONLY` 且实时价格服务整体不可用时，才返回 `503 PRICE_SERVICE_UNAVAILABLE`。
 
-### 4.6 搜索证券
+### 4.7 搜索证券
 
 ```http
 GET /api/v1/market/search?query=AAPL
@@ -352,7 +387,7 @@ GET /api/v1/market/search?query=AAPL
 
 搜索结果只用于辅助新增持仓。最终保存时，后端仍需重新校验 `providerQuoteId` 是否可报价。
 
-### 4.7 批量获取报价
+### 4.8 批量获取报价
 
 ```http
 GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=BEST_AVAILABLE
@@ -397,7 +432,7 @@ GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=
 
 `providerQuoteIds` 中某个标的不可用时，不应让整个响应失败；该项进入 `unavailable`，并在 portfolio summary 中体现为 `PARTIAL` 或 `UNAVAILABLE`。
 
-### 4.8 健康检查
+### 4.9 健康检查
 
 ```http
 GET /api/v1/health
@@ -436,7 +471,7 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 
 ## 6. 一致性、缓存与失败处理
 
-- 创建和删除持仓成功后，前端重新获取 holdings 和 summary，不在客户端自行推算权威结果。
+- 创建、修改和删除持仓成功后，前端重新获取 holdings 和 summary，不在客户端自行推算权威结果。
 - 市场价格调用设置短超时，并通过适配器与核心持仓服务隔离。
 - `BEST_AVAILABLE` 顺序建议为：新鲜外部价格、有效缓存、明确允许的演示价格、不可用。
 - 演示价格永远返回 `priceStatus = DEMO`，页面必须可见地标注。
@@ -449,7 +484,6 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 
 | 方法与路径 | 用途 |
 | --- | --- |
-| `PATCH /api/v1/holdings/{id}` | 修改数量和平均成本，配合 `version` 乐观锁 |
 | `GET /api/v1/portfolios` | 多组合列表 |
 | `POST /api/v1/portfolios` | 创建组合 |
 | `GET /api/v1/portfolios/{id}/transactions` | 查询不可变交易流水 |

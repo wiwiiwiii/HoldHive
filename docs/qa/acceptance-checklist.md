@@ -15,6 +15,7 @@ Use this checklist for `qa` branch validation.
 
 - [ ] Browse holdings
 - [ ] Add holding
+- [ ] Edit holding quantity and average purchase price
 - [ ] Delete holding
 - [ ] View portfolio summary
 - [ ] View allocation chart

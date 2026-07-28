@@ -5,6 +5,7 @@ import java.net.URI;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +17,7 @@ import com.holdhive.portfolio.api.dto.CreateHoldingRequest;
 import com.holdhive.portfolio.api.dto.HoldingListResponse;
 import com.holdhive.portfolio.api.dto.HoldingMapper;
 import com.holdhive.portfolio.api.dto.HoldingResponse;
+import com.holdhive.portfolio.api.dto.UpdateHoldingRequest;
 import com.holdhive.portfolio.application.HoldingCommandService;
 import com.holdhive.portfolio.application.HoldingQueryService;
 import com.holdhive.pricing.application.PriceMode;
@@ -64,6 +66,18 @@ public class HoldingController {
         return ResponseEntity
             .created(URI.create("/api/v1/holdings/" + holdingId))
             .body(response);
+    }
+
+    @PatchMapping("/{holdingId}")
+    public HoldingResponse updateHolding(
+        @PathVariable Long holdingId,
+        @RequestParam(defaultValue = "BEST_AVAILABLE") PriceMode priceMode,
+        @Valid @RequestBody UpdateHoldingRequest request
+    ) {
+        Long updatedHoldingId = holdingCommandService.updateHolding(request.toCommand(holdingId));
+        return HoldingMapper.toResponse(
+            holdingQueryService.getHolding(updatedHoldingId, priceMode)
+        );
     }
 
     @DeleteMapping("/{holdingId}")

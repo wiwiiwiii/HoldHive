@@ -169,6 +169,33 @@ curl "http://localhost:8080/api/v1/holdings/1?priceMode=DEMO_ALLOWED"
 - Existing holding -> `200 OK`, response body is a `Holding`.
 - Missing holding -> `404 Not Found`, `code: HOLDING_NOT_FOUND`.
 
+### PATCH /api/v1/holdings/{holdingId}
+
+```bash
+curl -i -X PATCH "http://localhost:8080/api/v1/holdings/{id}?priceMode=DEMO_ALLOWED" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 8,
+    "averagePurchasePrice": 320
+  }'
+```
+
+Expected: `200 OK`, response body is the updated `Holding`.
+
+Rules:
+
+- `quantity` is required and must be greater than 0.
+- `averagePurchasePrice` is required and must be 0 or greater.
+- `priceMode` is optional. Use `DEMO_ALLOWED` during local demo testing when checking demo quotes.
+- For `CASH` and `BANK_DEPOSIT`, backend keeps `averagePurchasePrice: 1.00000000` regardless of the submitted value.
+
+Cases to check:
+
+- [ ] Existing stock holding -> updates quantity, average purchase price, cost basis, and valuation.
+- [ ] Existing cash or bank-deposit holding -> updates quantity but keeps fixed price and fixed average purchase price at `1.00000000`.
+- [ ] Invalid quantity or average price -> `400 Bad Request`, `code: VALIDATION_FAILED`.
+- [ ] Missing holding -> `404 Not Found`, `code: HOLDING_NOT_FOUND`.
+
 ### POST /api/v1/holdings
 
 ```bash

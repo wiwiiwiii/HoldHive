@@ -297,6 +297,7 @@ HoldHive Dashboard
 | --- | --- | --- |
 | `GET /api/holdings` | 查询全部持仓及估值 | `200`；空组合返回空数组 |
 | `POST /api/holdings` | 新增持仓 | `201`；无效字段返回 `400` |
+| `PATCH /api/holdings/{id}` | 修改数量和平均成本 | `200`；无效字段返回 `400`；不存在返回 `404` |
 | `DELETE /api/holdings/{id}` | 删除持仓 | `204`；不存在返回 `404` |
 | `GET /api/portfolio/summary` | 获取摘要、配置和数据状态 | `200`；价格服务异常时返回部分结果和状态 |
 
@@ -377,7 +378,7 @@ HoldHive Dashboard
 
 | 后端成员 | 核心职责 | 具体任务 | 交付边界 |
 | --- | --- | --- | --- |
-| 成员 A：API + 数据库负责人 | 让持仓数据可靠进出 MySQL | Flyway 建表、Entity/Repository 或 JDBC DAO、`GET /holdings`、`POST /holdings`、`DELETE /holdings/{id}`、assetType 字段落库、基础 Swagger/OpenAPI | 前端可以通过 API 完成股票、ETF、场外基金、加密资产、现金和银行存款的查询、新增和删除 |
+| 成员 A：API + 数据库负责人 | 让持仓数据可靠进出 MySQL | Flyway 建表、Entity/Repository 或 JDBC DAO、`GET /holdings`、`POST /holdings`、`PATCH /holdings/{id}`、`DELETE /holdings/{id}`、assetType 字段落库、基础 Swagger/OpenAPI | 前端可以通过 API 完成股票、ETF、场外基金、加密资产、现金和银行存款的查询、新增、修改和删除 |
 | 成员 B：业务计算 + 质量负责人 | 让数据被正确计算、校验、测试并稳定返回 | `PortfolioCalculator`、summary API、demo/market price adapter、现金/存款固定估值、加密资产演示价格、基金穿透 demo endpoint、统一错误响应、validation、JUnit/Mockito/MockMvc 测试、JaCoCo 覆盖率 | 前端可以拿到多资产 summary、基金底层持仓提示、图表数据和稳定错误格式 |
 
 协作规则：
@@ -467,7 +468,7 @@ backend/
 成员 A 的交付边界：
 
 - MySQL 表结构、索引、外键和唯一约束可由 Flyway 从空库创建。
-- `GET /api/v1/holdings`、`POST /api/v1/holdings`、`DELETE /api/v1/holdings/{id}` 可运行。
+- `GET /api/v1/holdings`、`POST /api/v1/holdings`、`PATCH /api/v1/holdings/{id}`、`DELETE /api/v1/holdings/{id}` 可运行。
 - Repository 测试覆盖唯一约束、基础查询和持仓删除。
 - 本地启动说明中的数据库连接和 profile 可用。
 
