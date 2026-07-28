@@ -63,3 +63,7 @@ frontend/vite.config.d.ts
 
 # Local generated artifacts
 *.local
+
+# Presentation generated verification artifacts
+docs/presentation/previews/
+docs/presentation/*.inspect.ndjson
