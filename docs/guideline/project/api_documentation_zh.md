@@ -416,6 +416,40 @@ GET /api/v1/health
 
 该接口不得返回数据库连接串、凭据或内部网络地址。
 
+### 4.9 组合分析
+
+```http
+POST /api/v1/portfolio/analysis
+```
+
+请求体：
+
+```json
+{
+  "baseCurrency": "CNY",
+  "holdings": [
+    { "ticker": "600519", "assetType": "STOCK", "quantity": 100, "marketValue": 180000, "costBasis": 150000 }
+  ]
+}
+```
+
+成功响应：`200 OK`，字段说明：
+
+| 字段 | 说明 |
+| --- | --- |
+| `overview` | 总市值 + 按资产类型的配置占比 |
+| `concentration` | HHI 集中度指数、最大持仓、Top5 占比、风险等级 |
+| `fundOverlap` | 基金重仓股与直接持股的重叠情况 |
+| `lookThrough` | 基金穿透后按标的合并的有效敞口及穿透后 HHI |
+| `sectorExposure` | 穿透后按行业汇总的占比及行业 HHI |
+| `profitLoss` | 每笔持仓的浮动盈亏及百分比收益率 |
+| `llmInsights` | AI 基于以上数字生成的解读文本（JSON），仅解读不重新计算 |
+| `warning` | AI 生成失败时的原因（如 `LLM_UNAVAILABLE`）；此时 `llmInsights` 为 `null`，但其余字段仍正常返回 |
+
+这是新增接口，不影响 3.1/3.2 已有的 `Holding`/`PortfolioSummary` 数据模型。
+
+> TODO：以上响应字段拆分较细（6 个独立结果对象），后续计划根据前端实际使用情况做简化/合并。
+
 ## 5. 计算规则
 
 ```text
