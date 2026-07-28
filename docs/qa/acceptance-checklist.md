@@ -20,6 +20,23 @@ Use this checklist for `qa` branch validation.
 - [ ] View allocation chart
 - [ ] See clear state when prices are demo, cached, or unavailable
 
+### Asset Type Coverage
+
+- [ ] Stock holding displays correctly
+- [ ] ETF holding displays correctly
+- [ ] Mutual fund holding displays correctly (and fund lookthrough works)
+- [ ] Crypto holding displays correctly
+- [ ] Cash holding displays correctly
+- [ ] Bank deposit holding displays correctly
+
+### Edge Cases & UX States
+
+- [ ] API failure shows a user-friendly error message (not a raw stack trace)
+- [ ] Empty portfolio shows a clear "no holdings" state instead of a blank/broken screen
+- [ ] Deleting a holding requires a confirmation step
+- [ ] Add-holding form validates required fields and rejects bad input (e.g. negative quantity)
+- [ ] Slow response or unavailable price shows a loading/unavailable indicator instead of hanging or crashing
+
 ## Regression Checks
 
 - [ ] `cd backend && ./mvnw verify`
