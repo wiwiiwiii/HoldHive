@@ -13,7 +13,7 @@
 
 ## 1. 项目目标
 
-HoldHive 是一个面向单一用户的投资组合管理应用。用户可以查看、添加和删除持仓，并查看组合市值、盈亏和图表化表现。
+HoldHive 是一个面向单一用户的多资产投资组合管理应用。用户可以查看、添加和删除股票、场内基金、场外基金、加密资产、现金和银行存款，并查看组合市值、盈亏和图表化表现。
 
 执行原则是先交付稳定、可解释、可演示的 MVP，再考虑增强功能。任何扩展都不得影响持仓管理、估值计算、图表展示和本地启动流程。
 
@@ -47,13 +47,13 @@ HoldHive 不追求“功能最多”，而定位为一个可解释、低门槛�
 
 ### 3.1 背景故事
 
-刚开始工作的年轻职员 Alex 通过不同平台买了几只股票。他知道每只股票今天涨跌多少，却回答不了三个更重要的问题：自己一共投入了多少钱、整个组合现在值多少、风险是否过度集中在某一只股票上。
+刚开始工作的年轻职员 Alex 通过不同平台买了几只股票、一只场内基金和一只场外基金，也持有少量 BTC，并保留了一部分现金和银行存款。他知道每个 App 里的单项涨跌，却回答不了三个更重要的问题：自己一共投入了多少钱、整个组合现在值多少、风险是否因为基金底层持仓而集中在某些股票上。
 
 Alex 尝试过电子表格，但价格需要手动更新，公式也容易出错；成熟的财富管理工具能力强，却包含账户聚合、税务、退休规划和复杂风险指标，第一次使用时很难判断应该先看什么。于是他逐渐回到“分别打开几个应用看价格”的旧习惯，拥有大量行情信息，却没有形成组合视角。
 
-HoldHive 的名字来自蜂巢：每项持仓像一个独立蜂房，只有汇集起来才能看见完整结构。Alex 只需录入证券代码、数量和平均买入价，系统就把分散的持仓整理成一张可信的组合快照。打开首页时，他首先看到总价值和盈亏，然后通过资产配置图识别集中风险；需要调整记录时，可以在同一页面完成添加或删除。
+HoldHive 的名字来自蜂巢：每项资产像一个独立蜂房，只有汇集起来才能看见完整结构。Alex 只需选择资产类型，录入代码、数量和平均买入价，系统就把股票、基金、加密资产、现金和存款整理成一张可信的组合快照。打开首页时，他首先看到总价值和盈亏，然后通过资产配置图识别集中风险；当添加基金时，系统提醒基金本身可能包含股票，并在后续阶段提供基金穿透分析。
 
-演示故事以 Alex 为主线：他首次打开空组合，加入三项持仓，看到组合价值和配置图形成；随后发现其中一项占比过高，并删除一条错误记录。整个过程展示 HoldHive 如何把“零散行情”变为“可理解的组合”。
+演示故事以 Alex 为主线：他首次打开空组合，加入一只股票、一只场内基金、一只场外基金、一项加密资产、一笔现金和一笔银行存款，看到组合价值和配置图形成；随后发现基金可能与直持股票存在重叠，并删除一条错误记录。整个过程展示 HoldHive 如何把“零散资产”变为“可理解的组合”。
 
 ### 3.2 产品愿景与价值主张
 
@@ -65,16 +65,58 @@ HoldHive 的名字来自蜂巢：每项持仓像一个独立蜂房，只有汇�
 
 ### 3.3 目标用户与非目标用户
 
-**主要用户：** 持有少量股票、希望集中查看整体情况，但暂时不需要专业交易或税务系统的投资初学者。
+**主要用户：** 持有少量股票、基金、加密资产、现金和银行存款，想集中查看整体情况，但暂时不需要专业交易、税务或账户聚合系统的投资初学者。
 
 **核心需求：**
 
-- 快速录入持仓，不需要连接真实券商账户。
+- 快速录入股票、场内基金、场外基金、加密资产、现金和银行存款，不需要连接真实券商、基金平台、交易所、银行或钱包账户。
 - 一眼看懂总投入、当前价值和未实现盈亏。
-- 识别单一持仓占比过高的情况。
+- 识别单一持仓或单一资产类型占比过高的情况。
 - 在市场数据不可用时知道发生了什么，而不是看到错误数字。
 
-**非目标用户：** 高频交易者、专业基金经理、需要报税/审计报表的用户、需要多账户多币种精确归因的用户。本期也不提供认证、真实交易、买卖建议或自动调仓。
+**非目标用户：** 高频交易者、专业基金经理、需要报税/审计报表的用户、需要多账户多币种精确归因的用户。本期也不提供认证、真实交易、买卖建议、自动调仓、链上钱包读取、交易所账户同步或现金流水管理。
+
+### 3.3.1 MVP 资产类型
+
+HoldHive MVP 支持六类资产，范围必须明确，避免四天项目膨胀成完整财富管理系统：
+
+| 资产类型 | 示例 | MVP 能力 | 不做内容 |
+| --- | --- | --- | --- |
+| `STOCK` | `AAPL`、`600519` | 行情或演示价格、市值、盈亏、占比 | 专业研报、财报因子、交易下单 |
+| `ETF` | `VOO`、`SPY`、`510300` | 场内基金，与股票同样录入和估值，配置图单独分类；添加时提示可能有底层股票 | 基金穿透作为 P1，不阻塞 P0 |
+| `MUTUAL_FUND` | 开放式基金、货币基金 | 场外基金，MVP 可用手工/演示净值估值；添加时提示披露滞后和底层资产 | 申赎流水、费率和基金评级 |
+| `CRYPTO` | `BTC`、`ETH` | 支持展示、手工录入和演示/缓存价格估值 | 钱包连接、链上交易历史、币币兑换 |
+| `CASH` | `USD` | 固定按 `1.00000000` 估值，纳入总值和配置 | 存取款流水、利息、外汇换算 |
+| `BANK_DEPOSIT` | `HSBC_USD`、`USD_DEPOSIT` | 固定按本金估值，纳入总值和配置 | 利息自动计提、到期收益、银行账户同步 |
+
+本期默认基准币种为 `USD`。不同币种之间不做自动 FX 换算；如果添加现金或银行存款，建议只添加组合基准币种。
+
+### 3.3.2 基金穿透与解耦
+
+基金应与股票估值解耦处理。用户添加 `ETF` 或 `MUTUAL_FUND` 时，系统先把它作为一项独立资产保存和估值；基金底层股票、债券或现金只进入“穿透分析”模块，不写回主持仓，不改变基金市值，也不自动生成股票持仓。
+
+前端必须在添加基金时显示提醒：
+
+```text
+This fund may contain stocks already held directly. Lookthrough data is for exposure analysis only and may lag the latest disclosure.
+```
+
+分期规则：
+
+- **P0：** 允许添加场内/场外基金，并显示“可能包含底层股票”的提示。
+- **P1：** 后端提供基金穿透接口，展示基金最新披露的 Top Holdings 和权重。
+- **P2：** 组合暴露页支持 `lookthrough=true`，把直持股票和基金派生股票暴露分开展示，并提示重叠。
+
+### 3.3.3 大模型分析
+
+大模型分析放在最后阶段，不进入 P0 或 Day 3-4 的核心交付。该功能只消费后端整理后的结构化快照，包括资产类型、市值占比、价格状态、基金穿透摘要和风险提示；它不直接访问数据库、不调用第三方行情、不生成交易建议。
+
+前端展示原则：
+
+- 标题使用“AI Portfolio Brief”或“组合解读”，避免写成“投资建议”。
+- 每条结论必须能追溯到输入数据，例如资产占比、基金重叠、现金/存款比例。
+- 固定显示免责声明：分析仅用于教育和解释，不构成买卖建议。
+- 大模型调用失败时，页面保留规则型分析，不影响持仓、估值和图表。
 
 ### 3.4 设计原则
 
@@ -94,8 +136,8 @@ MVP 采用单页 Dashboard，避免在两天编码时间内引入不必要的路
 HoldHive Dashboard
 ├── 顶部栏：品牌、价格更新时间、数据状态
 ├── 组合摘要：总投入、当前价值、未实现盈亏、持仓数
-├── 资产配置：按持仓市值展示的环形图和图例
-├── 持仓列表：ticker、数量、均价、当前价、市值、盈亏、占比、操作
+├── 资产配置：按资产类型和持仓市值展示的环形图和图例
+├── 持仓列表：assetType、ticker、数量、均价、当前价、市值、盈亏、占比、操作
 ├── 添加持仓：按钮打开表单或侧栏
 └── 全局反馈：成功提示、错误提示、删除确认
 ```
@@ -107,7 +149,7 @@ HoldHive Dashboard
 #### 流程 A：建立第一个组合
 
 1. 用户看到空状态和“添加第一项持仓”按钮。
-2. 输入 ticker、quantity、averagePurchasePrice。
+2. 选择 assetType，输入 ticker、quantity、averagePurchasePrice；现金使用币种代码作为 ticker，银行存款使用可读代码。
 3. 前端即时检查必填、数值范围和格式。
 4. 后端再次验证并保存。
 5. 页面刷新摘要、图表和持仓表，并显示成功反馈。
@@ -119,6 +161,7 @@ HoldHive Dashboard
 3. 查看资产配置图，识别最大持仓。
 4. 在持仓表中查看单项市值、盈亏和占比。
 5. 如果价格缺失，系统明确标记受影响持仓，不把未知价格当作 0。
+6. 如果组合中包含基金，系统在分析页解释基金可能包含股票，并区分直持暴露和基金派生暴露。
 
 #### 流程 C：删除错误持仓
 
@@ -133,9 +176,11 @@ HoldHive Dashboard
 | --- | --- | --- |
 | 顶部栏 | HoldHive 品牌、数据状态、最后更新时间 | 数据为 mock 时显示“演示数据”；失败时提供重试 |
 | 摘要卡 | 总投入、当前价值、未实现盈亏、持仓数 | 盈亏同时使用正负号、文字和颜色，避免只依赖颜色 |
-| 配置图 | 每项持仓的市值占比 | 图例含 ticker、比例和金额；无有效价格时解释无法计算 |
-| 持仓表 | ticker、数量、均价、现价、市值、盈亏、占比 | 支持删除；移动端允许横向滚动或折叠次要列 |
-| 添加表单 | ticker、数量、平均买入价 | 保留用户输入；错误定位到字段；提交时防止重复点击 |
+| 配置图 | 资产类型和每项持仓的市值占比 | 图例含 assetType、ticker、比例和金额；无有效价格时解释无法计算 |
+| 持仓表 | assetType、ticker、数量、均价、现价、市值、盈亏、占比 | 支持删除；移动端允许横向滚动或折叠次要列 |
+| 添加表单 | assetType、ticker、数量、平均买入价 | 保留用户输入；基金、现金、存款显示专属提示；错误定位到字段；提交时防止重复点击 |
+| 基金穿透卡 | 基金 Top Holdings、披露日期、重叠股票提醒 | P1 展示；P0 只显示基金可能重叠的提示 |
+| AI 分析卡 | 大模型生成的组合解读、关键发现、数据限制 | 最后阶段展示；必须带非投资建议免责声明 |
 | 空状态 | 产品价值说明和主行动按钮 | 不显示全是 0 的无意义图表 |
 | 错误状态 | 可理解的原因和恢复动作 | API 失败可重试；表单失败不关闭表单 |
 
@@ -152,15 +197,17 @@ HoldHive Dashboard
 | 顶部 KPI | 让用户 3 秒内看懂当前状态 | 总市值、未实现盈亏、持仓数、价格状态、添加持仓按钮 |
 | 左侧导航 | 形成现代产品感，但不增加路由复杂度 | 保留 Dashboard；Holdings/Performance 可显示为禁用或作为页面锚点 |
 | 图表卡片 | 比表格更快解释组合 | 必做资产配置 donut；时间允许加组合价值 line/area chart |
-| 持仓表 | 提供可审计明细 | ticker、quantity、average price、current price、market value、P/L、allocation、delete |
-| Insight 卡片 | 把指标翻译成人话 | 最大持仓、未定价持仓、演示价格、集中度提示 |
+| 持仓表 | 提供可审计明细 | asset type、ticker、quantity、average price、current price、market value、P/L、allocation、delete |
+| Insight 卡片 | 把指标翻译成人话 | 最大持仓、资产类型占比、基金重叠、未定价持仓、演示价格、集中度提示 |
 | 底部卡片 | 做二级摘要 | priced holdings、unpriced holdings、top holding、data source |
 
 #### 图表设计
 
 | 图表 | 优先级 | 前端库建议 | 数据来源 | 说明 |
 | --- | --- | --- | --- | --- |
-| Asset Allocation Donut | P0 | Recharts `PieChart` 或 Chart.js doughnut | `summary.allocations` | 展示各持仓市值占比，必须配文字图例 |
+| Asset Allocation Donut | P0 | Recharts `PieChart` 或 Chart.js doughnut | `summary.allocations` | 展示股票、场内基金、场外基金、加密资产、现金、银行存款及各持仓市值占比，必须配文字图例 |
+| Fund Lookthrough Card | P1 | 普通卡片 + 表格，不强依赖图表库 | `fundLookthrough.holdings` | 展示基金底层 Top Holdings、权重、披露日期和重叠提醒 |
+| AI Portfolio Brief | Final | 普通卡片 + 状态标签 | `ai-analysis` | 展示解释性结论、数据限制和免责声明，不做买卖建议 |
 | Portfolio Value Trend | P1 | Recharts `AreaChart` / `LineChart` 或 Chart.js line | 演示历史估值或后续 `portfolio_valuation` | 用于增强展示，不作为 P0 阻塞 |
 | Gain/Loss Bar | P1 | Recharts `BarChart` 或 Chart.js bar | holdings | 展示每个持仓盈亏，帮助识别贡献项 |
 | Concentration Indicator | P1 | CSS progress/ring 或 Recharts radial | summary 最大占比 | 超过 40% 时提示，不做投资建议 |
@@ -176,6 +223,13 @@ HoldHive Dashboard
 | 删除成功 | `AAPL removed. Allocation and totals updated.` | Toast |
 | 表单校验 | `Quantity must be greater than 0.` | 字段下方 |
 | 重复持仓 | `AAPL already exists. Edit the existing holding instead of adding a duplicate.` | 表单顶部 |
+| 场内基金 | `ETF trades like a stock, but it may contain underlying stocks.` | 资产类型提示 |
+| 场外基金 | `Mutual fund data may update by disclosure or NAV schedule, not intraday.` | 资产类型提示 |
+| 基金重叠 | `This fund may contain stocks you already hold directly.` | 添加表单和分析页 |
+| 现金录入 | `Cash is valued at 1.00 in the portfolio base currency.` | 资产类型提示 |
+| 银行存款 | `Bank deposit is shown at principal value. Interest is not accrued automatically.` | 资产类型提示 |
+| 加密资产 | `Crypto prices use demo or cached data in MVP.` | 表单或状态标签 |
+| 大模型分析 | `AI analysis explains the current snapshot and is not investment advice.` | AI 分析卡 |
 | 演示价格 | `Demo prices are shown for training. They are not live market data.` | 顶部状态条 |
 | 部分估值 | `Some holdings have no price. Totals only include priced holdings.` | 摘要区 |
 | 价格失败 | `Price service is unavailable. Saved holdings are still safe.` | Banner |
@@ -197,17 +251,23 @@ HoldHive Dashboard
 
 | ID | 优先级 | 用户故事 | 验收标准 |
 | --- | --- | --- | --- |
-| HH-01 | P0 | 作为用户，我可以查看全部持仓。 | 页面和 API 返回持仓；无数据时显示可行动的空状态。 |
-| HH-02 | P0 | 作为用户，我可以添加持仓。 | ticker 非空并标准化为大写；quantity 大于 0；平均买入价大于等于 0；成功后所有区域同步更新。 |
+| HH-01 | P0 | 作为用户，我可以查看全部持仓。 | 页面和 API 返回股票、场内基金、场外基金、加密资产、现金和银行存款；无数据时显示可行动的空状态。 |
+| HH-02 | P0 | 作为用户，我可以添加持仓。 | assetType 合法；ticker 非空并标准化为大写；quantity 大于 0；平均买入价大于等于 0；成功后所有区域同步更新。 |
 | HH-03 | P0 | 作为用户，我可以删除错误持仓。 | 删除前确认；成功后记录消失并重新计算；不存在的 ID 返回明确错误。 |
 | HH-04 | P0 | 作为用户，我可以查看组合摘要。 | 正确显示总投入、当前价值、未实现盈亏和持仓数；空组合不报错。 |
-| HH-05 | P0 | 作为用户，我可以查看资产配置。 | 图表比例基于有效市值，合计受浮点舍入影响时约为 100%；缺失价格被明确标记。 |
+| HH-05 | P0 | 作为用户，我可以查看资产配置。 | 图表比例基于有效市值，至少区分股票、场内基金、场外基金、加密资产、现金和银行存款；合计受舍入影响时约为 100%；缺失价格被明确标记。 |
 | HH-06 | P0 | 作为用户，我知道数据是否可信。 | 显示价格来源、更新时间、实时/缓存/演示状态；市场服务失败不返回伪造的实时价格。 |
 | HH-07 | P1 | 作为用户，我可以看到集中度提示。 | 任一持仓占有效总市值超过 40% 时显示解释性提示，并说明该提示仅用于风险认知。 |
+| HH-08 | P0 | 作为用户，我可以把现金纳入组合。 | 现金以基准币种固定价格 `1.00` 纳入总值、配置和持仓表，不请求外部行情。 |
+| HH-09 | P0 | 作为用户，我可以把银行存款纳入组合。 | 银行存款以本金固定价格 `1.00` 纳入总值、配置和持仓表，不自动计算利息。 |
+| HH-10 | P0 | 作为用户，我添加基金时会收到底层持仓提醒。 | 选择 `ETF` 或 `MUTUAL_FUND` 时出现基金可能包含股票和披露滞后的提示。 |
+| HH-11 | P1 | 作为用户，我可以查看基金底层股票。 | 基金穿透接口返回 Top Holdings、权重、披露日期和数据来源；穿透数据不改变主持仓。 |
+| HH-12 | P2 | 作为用户，我可以查看穿透后的组合暴露。 | 页面区分直持暴露和基金派生暴露，并提示重叠股票。 |
+| HH-13 | Final | 作为用户，我可以查看 AI 组合解读。 | 大模型结论带数据依据、限制和免责声明；失败时不影响规则型分析。 |
 
 ### 3.10 计算口径
 
-对每项持仓：
+对股票、场内基金、场外基金和加密资产：
 
 ```text
 投入成本 = quantity × averagePurchasePrice
@@ -217,7 +277,17 @@ HoldHive Dashboard
 持仓占比 = 当前市值 ÷ 全部有效持仓当前市值 × 100%
 ```
 
-组合总值为所有具有有效价格的持仓市值之和。若任一持仓价格缺失，摘要必须显示“部分估值”，并列出未计入项。投入成本为 0 时不计算盈亏率，显示 `N/A`，避免除零。金额统一使用两位小数；内部计算不得过早舍入。
+现金和银行存款使用固定规则：
+
+```text
+当前价格 = 1.00000000
+投入成本 = quantity × 1.00000000
+当前市值 = quantity × 1.00000000
+未实现盈亏 = 0
+价格状态 = FIXED
+```
+
+组合总值为所有具有有效价格的持仓市值之和。现金和银行存款始终属于有效估值；股票、场内基金、场外基金和加密资产如果价格缺失，摘要必须显示“部分估值”，并列出未计入项。基金穿透只用于分析暴露，不参与主持仓市值重复计算。投入成本为 0 时不计算盈亏率，显示 `N/A`，避免除零。金额统一使用两位小数；内部计算不得过早舍入。
 
 本期的“表现”是当前快照下的未实现盈亏，不等同于考虑资金流、股息、费用和持有期的真实投资回报率。界面和演示必须说明该限制。
 
@@ -251,7 +321,7 @@ HoldHive Dashboard
 - 价格服务断网时仍可演示已保存持仓，并明确解释数据状态。
 - 四位成员都能解释产品取舍、计算公式和自己负责或审查的代码。
 
-明确不在本期范围内：登录和多用户、真实交易、券商连接、CSV 导入、现金流水、股息、税务、公司行动、多币种、历史交易账本、基准比较、专业风险指标和个性化投资建议。
+明确不在本期范围内：登录和多用户、真实交易、券商连接、交易所连接、钱包连接、银行连接、CSV 导入、现金流水、基金申赎流水、存款利息自动计提、股息、税务、公司行动、多币种自动换算、历史交易账本、基准比较、专业风险指标和个性化投资建议。基金穿透和大模型分析均为后期模块，不阻塞 P0 演示。
 
 ## 4. MVP 范围
 
@@ -260,15 +330,20 @@ HoldHive Dashboard
 - 持久化保存持仓数据。
 - REST API 支持持仓查询、新增和删除。
 - UI 支持浏览组合、新增持仓和删除持仓。
+- 支持 `STOCK`、`ETF`、`MUTUAL_FUND`、`CRYPTO`、`CASH`、`BANK_DEPOSIT` 六类资产的展示和基础估值。
+- 添加基金时给出底层持仓和重叠暴露提醒。
 - 展示组合总市值、总盈亏及至少一个图表。
 - 后端单元测试行覆盖率不低于 70%。
 - 提供 API 文档、架构图、ERD 和可运行说明。
 
 ### 可选增强
 
-- 接入市场价格数据；外部服务不可用时使用明确标识的演示数据。
+- 接入股票/ETF 市场价格数据；外部服务不可用时使用明确标识的演示数据。
+- 接入基金净值或基金持仓披露数据，并显示穿透后的 Top Holdings。
+- 接入实时加密资产价格接口；MVP 可先使用演示或缓存价格。
 - 规则型再平衡提示，例如单一资产占比超过 40%。
 - 规则型集中度提示、价格缓存状态和更完整的组合历史视图。
+- 大模型组合解读；只作为最后阶段功能，不影响核心估值链路。
 
 ## 5. 最小数据模型
 
@@ -277,7 +352,8 @@ HoldHive Dashboard
 | 字段 | 说明 |
 | --- | --- |
 | `id` | 持仓唯一标识 |
-| `ticker` | 证券代码，例如 `AAPL` |
+| `assetType` | 资产类型：`STOCK`、`ETF`、`MUTUAL_FUND`、`CRYPTO`、`CASH`、`BANK_DEPOSIT` |
+| `ticker` | 资产代码，例如 `AAPL`、`VOO`、`BTC`、`USD`、`HSBC_USD` |
 | `quantity` | 持仓数量，必须大于 0 |
 | `averagePurchasePrice` | 平均买入价，必须大于等于 0 |
 | `createdAt` | 创建时间 |
@@ -301,8 +377,8 @@ HoldHive Dashboard
 
 | 后端成员 | 核心职责 | 具体任务 | 交付边界 |
 | --- | --- | --- | --- |
-| 成员 A：API + 数据库负责人 | 让持仓数据可靠进出 MySQL | Flyway 建表、Entity/Repository 或 JDBC DAO、`GET /holdings`、`POST /holdings`、`DELETE /holdings/{id}`、基础 Swagger/OpenAPI | 前端可以通过 API 完成持仓查询、新增和删除 |
-| 成员 B：业务计算 + 质量负责人 | 让数据被正确计算、校验、测试并稳定返回 | `PortfolioCalculator`、summary API、demo/market price adapter、统一错误响应、validation、JUnit/Mockito/MockMvc 测试、JaCoCo 覆盖率 | 前端可以拿到 summary、图表数据和稳定错误格式 |
+| 成员 A：API + 数据库负责人 | 让持仓数据可靠进出 MySQL | Flyway 建表、Entity/Repository 或 JDBC DAO、`GET /holdings`、`POST /holdings`、`DELETE /holdings/{id}`、assetType 字段落库、基础 Swagger/OpenAPI | 前端可以通过 API 完成股票、ETF、场外基金、加密资产、现金和银行存款的查询、新增和删除 |
+| 成员 B：业务计算 + 质量负责人 | 让数据被正确计算、校验、测试并稳定返回 | `PortfolioCalculator`、summary API、demo/market price adapter、现金/存款固定估值、加密资产演示价格、基金穿透 demo endpoint、统一错误响应、validation、JUnit/Mockito/MockMvc 测试、JaCoCo 覆盖率 | 前端可以拿到多资产 summary、基金底层持仓提示、图表数据和稳定错误格式 |
 
 协作规则：
 
@@ -318,9 +394,9 @@ HoldHive Dashboard
 
 | 时间 | 成员 A：API + 数据库 | 成员 B：业务计算 + 质量 |
 | --- | --- | --- |
-| Day 1-2 Planning | 定 MySQL 表结构、Flyway 文件、Holding/Instrument/PriceSnapshot 字段、ERD | 定错误响应、summary response、priceStatus、valuationStatus、计算规则、测试矩阵 |
-| Day 3 Coding | 实现 migration、持仓实体/DAO、CRUD API、基础 API 文档 | 实现 portfolio summary、price adapter、validation、global exception handler、核心单元测试 |
-| Day 4 Coding | 修 CRUD/数据库 bug、支持 Swagger/curl 联调、维护启动说明 | 补 MockMvc/API 错误测试、覆盖率到 70%+、支持图表字段和演示数据 |
+| Day 1-2 Planning | 定 MySQL 表结构、Flyway 文件、Holding/Instrument/PriceSnapshot 字段、assetType 约束、ERD | 定错误响应、summary response、priceStatus、valuationStatus、现金/股票/ETF/加密资产计算规则、测试矩阵 |
+| Day 3 Coding | 实现 migration、持仓实体/DAO、CRUD API、基础 API 文档 | 实现 portfolio summary、price adapter、现金固定估值、加密资产 demo quote、validation、global exception handler、核心单元测试 |
+| Day 4 Coding | 修 CRUD/数据库 bug、支持 Swagger/curl 联调、维护启动说明 | 补 MockMvc/API 错误测试、覆盖率到 70%+、支持图表字段、多资产 allocation 和演示数据 |
 
 一句话边界：成员 A 负责“数据能可靠进出 MySQL”，成员 B 负责“数据能被正确计算、校验、测试并稳定返回给前端”。
 
@@ -334,9 +410,9 @@ HoldHive Dashboard
 
 | 成员 | 主要实现目录 | 主要文件类型 | 不建议直接负责 |
 | --- | --- | --- | --- |
-| 成员 A | `backend/src/main/java/.../holdhive/portfolio/api`、`portfolio/persistence`、`src/main/resources/db/migration` | Controller、DTO、Entity、Repository、Flyway SQL、OpenAPI 基础配置 | 组合估值公式和价格适配器内部逻辑 |
-| 成员 B | `backend/src/main/java/.../holdhive/portfolio/application`、`portfolio/domain`、`pricing`、`common/error` | Service、Calculator、Price Adapter、异常处理、后端测试 | Flyway 建表主迁移和前端页面组件 |
-| 成员 C | `frontend/src/api`、`frontend/src/features/portfolio`、`frontend/src/components`、`frontend/src/styles` | React 组件、Hook、DTO、样式、图表、前端测试 | 后端数据库迁移和核心业务计算 |
+| 成员 A | `backend/src/main/java/.../holdhive/portfolio/api`、`portfolio/persistence`、`src/main/resources/db/migration` | Controller、DTO、Entity、Repository、Flyway SQL、OpenAPI 基础配置、assetType 持久化 | 组合估值公式和价格适配器内部逻辑 |
+| 成员 B | `backend/src/main/java/.../holdhive/portfolio/application`、`portfolio/domain`、`pricing`、`common/error` | Service、Calculator、Price Adapter、现金固定估值、加密资产演示报价、异常处理、后端测试 | Flyway 建表主迁移和前端页面组件 |
+| 成员 C | `frontend/src/api`、`frontend/src/features/portfolio`、`frontend/src/components`、`frontend/src/styles` | React 组件、Hook、DTO、样式、图表、前端测试、多资产标签和筛选 | 后端数据库迁移和核心业务计算 |
 | 成员 D | `.github/workflows`、`docs/qa`、`docs/demo`、`docs/adr`、`scripts/mysql`、`.env.example`、`docs/guideline` | CI 配置、验收清单、缺陷记录、演示脚本、ADR、交付文档 | 未经负责人确认直接改 API 字段或数据库结构 |
 
 每个成员的 feature 分支建议和目录对应：成员 A 使用 `feature/backend-crud-db`，成员 B 使用 `feature/backend-summary-pricing`，成员 C 使用 `feature/frontend-dashboard`，成员 D 使用 `feature/qa-ci-docs`。所有分支最终通过 PR 合并到 `qa`，不直接推送到 `main` 或 `prod`。

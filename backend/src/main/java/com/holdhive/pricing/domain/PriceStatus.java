@@ -4,5 +4,6 @@ public enum PriceStatus {
     LIVE,
     CACHED,
     DEMO,
+    FIXED,
     UNAVAILABLE
 }

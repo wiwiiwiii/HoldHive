@@ -25,7 +25,22 @@
 - 币种使用 ISO 4217 三位代码，例如 `USD`。
 - 百分比直接返回百分数，例如 `12.34` 表示 `12.34%`，不是 `0.1234`。
 
-### 2.3 数据状态
+### 2.3 资产类型
+
+MVP 支持六类可展示资产：
+
+| 类型 | 含义 | 估值方式 |
+| --- | --- | --- |
+| `STOCK` | 普通股票，例如 `AAPL`、`600519` | 通过行情适配器或演示价格估值 |
+| `ETF` | 场内基金 / 交易所交易基金，例如 `VOO`、`SPY`、`QQQ` | 与股票使用同一套行情和估值公式 |
+| `MUTUAL_FUND` | 场外基金，例如开放式基金、货币基金 | MVP 使用手工、演示或缓存净值；实时净值为 P1 |
+| `CRYPTO` | 加密资产，例如 `BTC`、`ETH` | MVP 先支持演示/缓存价格；实时接口为 P1 |
+| `CASH` | 现金余额，例如 `USD` | 以组合基准币种固定按 `1.00000000` 估值 |
+| `BANK_DEPOSIT` | 银行存款，例如活期或定期存款本金 | 以组合基准币种固定按 `1.00000000` 估值 |
+
+本期不支持债券、基金穿透、基金申赎流水、存款利息自动计提、现金流水、链上钱包、交易所账户同步或多币种汇率换算。
+
+### 2.4 数据状态
 
 价格状态使用以下枚举：
 
@@ -34,9 +49,10 @@
 | `LIVE` | 从外部数据服务获得的新鲜价格 |
 | `CACHED` | 使用仍在允许时效内的缓存价格 |
 | `DEMO` | 使用演示数据，不代表真实市场价格 |
+| `FIXED` | 不依赖外部行情的固定估值，MVP 用于 `CASH` 和 `BANK_DEPOSIT` |
 | `UNAVAILABLE` | 没有可用价格，该持仓不计入当前估值 |
 
-### 2.4 错误响应
+### 2.5 错误响应
 
 所有非 `2xx` 响应使用统一结构：
 
@@ -57,7 +73,7 @@
 
 生产响应不得包含堆栈、SQL、内部类名或密钥。`traceId` 用于关联服务端日志。
 
-### 2.5 错误码
+### 2.6 错误码
 
 | HTTP | `code` | 使用场景 |
 | --- | --- | --- |
@@ -80,6 +96,8 @@
   "exchangeCode": "NASDAQ",
   "displayName": "Apple Inc.",
   "assetType": "STOCK",
+  "provider": "EASTMONEY",
+  "providerQuoteId": "105.AAPL",
   "currency": "USD",
   "quantity": 10.00000000,
   "averagePurchasePrice": 175.50000000,
@@ -96,7 +114,7 @@
 }
 ```
 
-当价格不可用时，`currentPrice`、`marketValue`、`unrealizedGainLoss`、`unrealizedGainLossPercent`、`allocationPercent` 和 `priceObservedAt` 为 `null`，`priceStatus` 为 `UNAVAILABLE`。
+当价格不可用时，`currentPrice`、`marketValue`、`unrealizedGainLoss`、`unrealizedGainLossPercent`、`allocationPercent` 和 `priceObservedAt` 为 `null`，`priceStatus` 为 `UNAVAILABLE`。`CASH` 和 `BANK_DEPOSIT` 不请求外部行情，`currentPrice` 固定为 `1.00000000`，`priceStatus` 为 `FIXED`。
 
 ### 3.2 PortfolioSummary
 
@@ -117,6 +135,7 @@
     {
       "holdingId": 101,
       "ticker": "AAPL",
+      "assetType": "STOCK",
       "marketValue": 2102.50000000,
       "allocationPercent": 44.91934622
     }
@@ -125,6 +144,7 @@
     {
       "holdingId": 103,
       "ticker": "UNKNOWN",
+      "assetType": "STOCK",
       "reason": "PRICE_UNAVAILABLE"
     }
   ]
@@ -164,6 +184,8 @@ GET /api/v1/holdings
       "exchangeCode": "NASDAQ",
       "displayName": "Apple Inc.",
       "assetType": "STOCK",
+      "provider": "EASTMONEY",
+      "providerQuoteId": "105.AAPL",
       "currency": "USD",
       "quantity": 10.00000000,
       "averagePurchasePrice": 175.50000000,
@@ -205,8 +227,10 @@ Content-Type: application/json
 
 ```json
 {
+  "assetType": "STOCK",
   "ticker": "AAPL",
   "exchangeCode": "NASDAQ",
+  "providerQuoteId": "105.AAPL",
   "quantity": 10.00000000,
   "averagePurchasePrice": 175.50000000
 }
@@ -214,11 +238,42 @@ Content-Type: application/json
 
 规则：
 
+- `assetType` 必填，允许 `STOCK`、`ETF`、`MUTUAL_FUND`、`CRYPTO`、`CASH`、`BANK_DEPOSIT`；缺省策略如需保留，只能在后端明确按 `STOCK` 处理并返回标准化结果。
 - `ticker` 必填，去除首尾空格后转为大写，长度为 1-32。
 - `exchangeCode` 可选；缺省为 `UNKNOWN`。若市场数据服务要求交易所，服务端返回字段错误。
+- `providerQuoteId` 可选；搜索接口返回该字段时应随创建请求提交，后端仍需重新校验。
 - `quantity` 必填且大于 0。
 - `averagePurchasePrice` 必填且大于等于 0。
-- 同一组合、ticker 和 exchangeCode 已存在时不自动合并，返回 `409`，避免未经用户确认地改变平均成本。
+- 同一组合、assetType、ticker 和 exchangeCode 已存在时不自动合并，返回 `409`，避免未经用户确认地改变平均成本。
+- `ETF` 表示场内基金，像股票一样有交易所、ticker 和盘中价格。
+- `MUTUAL_FUND` 表示场外基金，`ticker` 使用基金代码或自定义代码；MVP 使用手工、演示或缓存净值，不承诺盘中实时价格。
+- `CASH` 的 `ticker` 使用币种代码，例如 `USD`；`exchangeCode` 使用 `CASH`；`quantity` 表示现金金额，`averagePurchasePrice` 固定为 `1.00000000`。
+- `BANK_DEPOSIT` 的 `ticker` 使用可读代码，例如 `HSBC_USD` 或 `USD_DEPOSIT`；`exchangeCode` 使用 `BANK`；`quantity` 表示存款本金，`averagePurchasePrice` 固定为 `1.00000000`。MVP 不自动计算利息或到期收益。
+
+现金请求示例：
+
+```json
+{
+  "assetType": "CASH",
+  "ticker": "USD",
+  "exchangeCode": "CASH",
+  "quantity": 4500.00000000,
+  "averagePurchasePrice": 1.00000000
+}
+```
+
+银行存款请求示例：
+
+```json
+{
+  "assetType": "BANK_DEPOSIT",
+  "ticker": "HSBC_USD",
+  "exchangeCode": "BANK",
+  "displayName": "HSBC USD Deposit",
+  "quantity": 3000.00000000,
+  "averagePurchasePrice": 1.00000000
+}
+```
 
 成功响应：`201 Created`
 
@@ -287,7 +342,7 @@ GET /api/v1/market/search?query=AAPL
       "exchangeCode": "NASDAQ",
       "provider": "EASTMONEY",
       "providerQuoteId": "105.AAPL",
-      "assetType": "US_STOCK"
+      "assetType": "STOCK"
     }
   ],
   "source": "EASTMONEY",
@@ -320,6 +375,7 @@ GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=
     {
       "ticker": "AAPL",
       "displayName": "苹果",
+      "assetType": "STOCK",
       "providerQuoteId": "105.AAPL",
       "currency": "USD",
       "currentPrice": 333.02000000,
@@ -372,6 +428,8 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 
 - `costBasis = 0` 时，`unrealizedGainLossPercent` 返回 `null`。
 - 价格不可用的持仓不计入 `totalMarketValue` 和 allocation 分母。
+- `CASH` 和 `BANK_DEPOSIT` 固定按 `currentPrice = 1.00000000` 计入总市值和 allocation 分母。
+- `MUTUAL_FUND` 使用最新可用净值或演示净值；如果净值缺失，按 `UNAVAILABLE` 处理。
 - `totalCostBasis` 包括全部持仓成本，便于用户理解投入；若摘要为部分估值，UI 必须明确提示总盈亏并非完整组合结果。
 - 中间计算不提前舍入，API 最多返回 8 位小数，UI 再按币种规则展示。
 - MVP 的表现只是当前快照未实现盈亏，不是时间加权或资金加权收益。
@@ -398,8 +456,147 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 | `POST /api/v1/portfolios/{id}/transactions` | 记录买入、卖出、股息等交易 |
 | `GET /api/v1/portfolios/{id}/performance` | 查询历史估值与表现 |
 | `GET /api/v1/portfolios/{id}/insights` | 获取规则型集中度或再平衡提示 |
+| `GET /api/v1/funds/{instrumentId}/lookthrough` | 查询基金底层持仓和权重，供用户理解基金中可能包含的股票 |
+| `GET /api/v1/portfolio/exposure?lookthrough=true` | 查询组合穿透后的资产/股票暴露，避免基金与直持股票被误解为完全独立 |
+| `POST /api/v1/portfolio/ai-analysis` | 最后阶段调用大模型生成组合解读，不作为买卖建议 |
 
 API 演进使用 `/api/v1` 保持兼容。新增可选字段属于兼容变更；删除字段、改变字段含义或收紧已有输入规则需要新版本或迁移期。
+
+### 7.1 基金穿透接口
+
+基金本身也是一个投资组合，可能持有股票、债券、现金或其他基金。HoldHive 不能把基金简单当成普通股票处理后就结束；当用户添加 `ETF` 或 `MUTUAL_FUND` 时，前端应提示“基金可能包含股票，可能与已有直持股票形成重叠暴露”。穿透信息不得写进主持仓表，也不得改变基金本身的估值结果，它只用于解释和分析。
+
+```http
+GET /api/v1/funds/{instrumentId}/lookthrough
+```
+
+成功响应：
+
+```json
+{
+  "fundInstrumentId": 102,
+  "ticker": "VOO",
+  "displayName": "Vanguard S&P 500 ETF",
+  "assetType": "ETF",
+  "asOfDate": "2026-06-30",
+  "source": "DEMO_DISCLOSURE",
+  "coveragePercent": 41.15000000,
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "displayName": "Apple Inc.",
+      "assetType": "STOCK",
+      "weightPercent": 7.12000000
+    },
+    {
+      "ticker": "MSFT",
+      "displayName": "Microsoft Corp.",
+      "assetType": "STOCK",
+      "weightPercent": 6.65000000
+    }
+  ],
+  "warnings": [
+    "Fund holdings are based on the latest available disclosure and may lag current positions."
+  ]
+}
+```
+
+```http
+GET /api/v1/portfolio/exposure?lookthrough=true
+```
+
+成功响应：
+
+```json
+{
+  "portfolioId": 1,
+  "lookthrough": true,
+  "asOfDate": "2026-06-30",
+  "directExposure": [
+    {
+      "ticker": "AAPL",
+      "assetType": "STOCK",
+      "marketValue": 2102.50000000,
+      "allocationPercent": 18.42000000
+    }
+  ],
+  "fundDerivedExposure": [
+    {
+      "ticker": "AAPL",
+      "assetType": "STOCK",
+      "marketValue": 208.86000000,
+      "allocationPercent": 1.83000000,
+      "sourceFundTicker": "VOO"
+    }
+  ],
+  "overlapWarnings": [
+    {
+      "ticker": "AAPL",
+      "message": "AAPL appears both as a direct holding and inside one or more funds."
+    }
+  ]
+}
+```
+
+接口边界：
+
+- P0 提供 demo lookthrough endpoint，至少支持本地演示基金；真实披露数据接入为 P1。
+- P1 可接入基金持仓披露数据，并缓存到独立的 fund lookthrough 表。
+- 穿透数据只用于展示和分析，不改变 `holding`、`price_snapshot` 或基金市值。
+- 穿透持仓通常有披露滞后，响应必须包含 `asOfDate` 和 `source`。
+
+### 7.2 大模型组合分析接口
+
+大模型分析放在最后阶段。它只读取后端整理后的结构化组合快照、基金穿透摘要和风险提示，不直接读取数据库表、不调用第三方行情、不保存用户密钥。输出必须带免责声明：结果用于解释当前组合结构，不构成投资建议。
+
+```http
+POST /api/v1/portfolio/ai-analysis
+Content-Type: application/json
+```
+
+请求：
+
+```json
+{
+  "portfolioId": 1,
+  "includeFundLookthrough": true,
+  "language": "zh-CN"
+}
+```
+
+成功响应：
+
+```json
+{
+  "portfolioId": 1,
+  "generatedAt": "2026-07-24T08:30:00Z",
+  "provider": "LLM_PROVIDER",
+  "model": "configured-model-name",
+  "disclaimer": "This analysis is educational and does not constitute investment advice.",
+  "summary": "Your portfolio is diversified across stocks, funds, crypto, cash and deposits, but fund lookthrough shows some overlap with direct stock holdings.",
+  "keyFindings": [
+    {
+      "title": "Fund overlap",
+      "detail": "AAPL appears directly and inside VOO, so effective exposure is higher than the direct holding alone."
+    },
+    {
+      "title": "Liquidity buffer",
+      "detail": "Cash and bank deposits provide stable value but reduce growth exposure."
+    }
+  ],
+  "dataLimitations": [
+    "Fund holdings may lag the latest disclosure.",
+    "Crypto prices may use demo or cached data in MVP."
+  ]
+}
+```
+
+安全规则：
+
+- API key 只放在后端环境变量，例如 `LLM_API_KEY`，不进入前端。
+- 后端向大模型发送最小必要字段，不发送用户姓名、账户号、数据库连接信息或原始异常。
+- 输出必须经过后端 schema 校验；无法解析时返回可理解错误，不把原始模型输出直接展示给用户。
+- 前端必须把大模型结论标记为“解释性分析”，不能显示成买入、卖出或收益预测。
 
 ## 8. 安全约束
 

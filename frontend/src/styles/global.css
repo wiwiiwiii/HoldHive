@@ -1,9 +1,29 @@
+/* ===== 1. CSS Variables & Reset ===== */
 :root {
+  /* Core colors */
+  --bg: #f0f1f6;
+  --card: #ffffff;
+  --ink: #172033;
+  --muted: #8a94a6;
+  --muted-darker: #58627a;
+  --line: #e8eaf0;
+  --line-darker: #e1e5ee;
+  --honey: #f6b33b;
+  --honey-dark: #e8a020;
+  --honey-darker: #d4901a;
+  --honey-soft: #fff4d6;
+  --honey-light: #ffd66b;
+  --success: #27ae60;
+  --danger: #e74c3c;
+  --danger-dark: #b42318;
+  --sidebar-width: 220px;
+
+  /* Font */
   font-family:
           Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
           sans-serif;
-  color: #172033;
-  background: #f0f1f6;
+  color: var(--ink);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -22,24 +42,24 @@ button {
 
 code {
   border-radius: 8px;
-  background: #fff4d6;
+  background: var(--honey-soft);
   color: #8a5700;
   padding: 2px 6px;
 }
 
-/* ===== Layout ===== */
+/* ===== 2. Layout ===== */
 .app-container {
   display: flex;
   min-height: 100vh;
-  background: #f0f1f6;
+  background: var(--bg);
 }
 
-/* ===== Sidebar ===== */
+/* ===== 3. Sidebar ===== */
 .sidebar {
-  width: 220px;
-  min-width: 220px;
-  background: #ffffff;
-  border-right: 1px solid #e8eaf0;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--card);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
@@ -67,7 +87,7 @@ code {
 .sidebar-section-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #8a94a6;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0 0 12px;
@@ -91,7 +111,7 @@ code {
   border-radius: 12px;
   cursor: pointer;
   font-size: 0.92rem;
-  color: #58627a;
+  color: var(--muted-darker);
   transition: all 0.15s ease;
   width: 100%;
   text-align: left;
@@ -99,17 +119,17 @@ code {
 
 .sidebar-nav-item:hover {
   background: #f6f7fb;
-  color: #172033;
+  color: var(--ink);
 }
 
 .sidebar-nav-item.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  color: #172033;
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  color: var(--ink);
   font-weight: 600;
 }
 
 .sidebar-nav-item.active svg {
-  color: #172033;
+  color: var(--ink);
 }
 
 .sidebar-health-card {
@@ -122,7 +142,7 @@ code {
 
 .health-label {
   font-size: 0.78rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0 0 6px;
 }
 
@@ -132,25 +152,25 @@ code {
   gap: 6px;
   font-size: 0.92rem;
   font-weight: 600;
-  color: #27ae60;
+  color: var(--success);
   margin: 0 0 4px;
 }
 
 .health-time {
   font-size: 0.72rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
-/* ===== Main Content ===== */
+/* ===== 4. Main Content ===== */
 .main-content {
   flex: 1;
-  margin-left: 220px;
+  margin-left: var(--sidebar-width);
   padding: 32px 40px;
   max-width: 1200px;
 }
 
-/* ===== Header ===== */
+/* ===== 5. Header ===== */
 .content-header {
   display: flex;
   justify-content: space-between;
@@ -162,12 +182,12 @@ code {
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #172033;
+  color: var(--ink);
 }
 
 .page-subtitle {
   font-size: 0.92rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -182,17 +202,17 @@ code {
   align-items: center;
   gap: 6px;
   padding: 10px 18px;
-  border: 1px solid #e1e5ee;
+  border: 1px solid var(--line-darker);
   border-radius: 999px;
-  background: #ffffff;
-  color: #172033;
+  background: var(--card);
+  color: var(--ink);
   font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .theme-toggle:hover {
-  border-color: #f6b33b;
+  border-color: var(--honey);
 }
 
 .add-button {
@@ -202,7 +222,7 @@ code {
   padding: 10px 20px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, #f6b33b, #e8a020);
+  background: linear-gradient(135deg, var(--honey), var(--honey-dark));
   color: #ffffff;
   font-size: 0.88rem;
   font-weight: 600;
@@ -211,11 +231,11 @@ code {
 }
 
 .add-button:hover {
-  background: linear-gradient(135deg, #e8a020, #d4901a);
+  background: linear-gradient(135deg, var(--honey-dark), var(--honey-darker));
   transform: translateY(-1px);
 }
 
-/* ===== Metric Cards ===== */
+/* ===== 6. Metric Cards ===== */
 .metric-cards-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -224,7 +244,7 @@ code {
 }
 
 .metric-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -239,36 +259,36 @@ code {
 }
 
 .metric-icon {
-  color: #f6b33b;
+  color: var(--honey);
 }
 
 .metric-label {
   font-size: 0.82rem;
-  color: #8a94a6;
+  color: var(--muted);
   font-weight: 500;
 }
 
 .metric-value {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 6px;
 }
 
 .metric-detail {
   font-size: 0.78rem;
-  color: #8a94a6;
+  color: var(--muted);
 }
 
 .metric-detail.positive {
-  color: #27ae60;
+  color: var(--success);
 }
 
 .metric-detail.negative {
-  color: #e74c3c;
+  color: var(--danger);
 }
 
-/* ===== Charts Row ===== */
+/* ===== 7. Charts Row ===== */
 .charts-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -277,7 +297,7 @@ code {
 }
 
 .chart-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -287,13 +307,13 @@ code {
 .chart-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 4px;
 }
 
 .chart-subtitle {
   font-size: 0.82rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0 0 20px;
 }
 
@@ -322,12 +342,12 @@ code {
 .donut-value {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
 }
 
 .donut-sub {
   font-size: 0.72rem;
-  color: #8a94a6;
+  color: var(--muted);
 }
 
 .allocation-legend {
@@ -351,20 +371,20 @@ code {
 }
 
 .legend-name {
-  color: #58627a;
+  color: var(--muted-darker);
   flex: 1;
 }
 
 .legend-value {
   font-weight: 600;
-  color: #172033;
+  color: var(--ink);
 }
 
 .performance-chart-wrapper {
   width: 100%;
 }
 
-/* ===== Bottom Row ===== */
+/* ===== 8. Bottom Row ===== */
 .bottom-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -373,7 +393,7 @@ code {
 
 .holdings-card,
 .notes-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -383,7 +403,7 @@ code {
 .section-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 16px;
 }
 
@@ -396,7 +416,7 @@ code {
   text-align: left;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #8a94a6;
+  color: var(--muted);
   padding: 10px 12px;
   border-bottom: 1px solid #f0f1f5;
   text-transform: uppercase;
@@ -406,7 +426,7 @@ code {
 .holdings-table td {
   padding: 14px 12px;
   font-size: 0.88rem;
-  color: #172033;
+  color: var(--ink);
   border-bottom: 1px solid #f6f7fb;
 }
 
@@ -435,26 +455,26 @@ code {
 }
 
 .note-icon {
-  color: #f6b33b;
+  color: var(--honey);
   flex-shrink: 0;
 }
 
 .note-title {
   font-size: 0.92rem;
   font-weight: 600;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 2px;
 }
 
 .note-detail {
   font-size: 0.78rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
-/* ===== Gateway Page ===== */
+/* ===== 9. Gateway Page ===== */
 .gateway-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 24px;
   padding: 32px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -484,13 +504,13 @@ code {
 .gateway-main-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 4px;
 }
 
 .gateway-main-subtitle {
   font-size: 0.92rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -501,13 +521,13 @@ code {
 .hover-hint-title {
   font-size: 0.88rem;
   font-weight: 600;
-  color: #f6b33b;
+  color: var(--honey);
   margin: 0 0 2px;
 }
 
 .hover-hint-sub {
   font-size: 0.78rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -526,34 +546,34 @@ code {
 .hive-center-label {
   font-size: 16px;
   font-weight: 700;
-  fill: #172033;
+  fill: var(--ink);
 }
 
 .hive-center-sub {
   font-size: 11px;
-  fill: #8a94a6;
+  fill: var(--muted);
 }
 
 .hive-node-label {
   font-size: 13px;
   font-weight: 600;
-  fill: #172033;
+  fill: var(--ink);
 }
 
 .hive-node-sub {
   font-size: 11px;
-  fill: #8a94a6;
+  fill: var(--muted);
 }
 
 .tooltip-title {
   font-size: 13px;
   font-weight: 600;
-  fill: #172033;
+  fill: var(--ink);
 }
 
 .tooltip-sub {
   font-size: 11px;
-  fill: #8a94a6;
+  fill: var(--muted);
 }
 
 .gateway-legend {
@@ -574,151 +594,18 @@ code {
 
 .legend-state-label {
   font-size: 0.82rem;
-  color: #8a94a6;
+  color: var(--muted);
   font-weight: 500;
 }
 
 .legend-navigate {
   font-size: 0.88rem;
   font-weight: 600;
-  color: #172033;
+  color: var(--ink);
   margin-left: 4px;
 }
 
-/* ===== Gateway Page ===== */
-.gateway-card {
-  background: #ffffff;
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
-  border: 1px solid #eef0f5;
-}
-
-.gateway-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.gateway-brand-area {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.gateway-logo {
-  width: 100px;
-  height: auto;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.gateway-main-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #172033;
-  margin: 0 0 4px;
-}
-
-.gateway-main-subtitle {
-  font-size: 0.92rem;
-  color: #8a94a6;
-  margin: 0;
-}
-
-.gateway-hover-hint {
-  text-align: right;
-}
-
-.hover-hint-title {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #f6b33b;
-  margin: 0 0 2px;
-}
-
-.hover-hint-sub {
-  font-size: 0.78rem;
-  color: #8a94a6;
-  margin: 0;
-}
-
-.hive-map-container {
-  display: flex;
-  justify-content: center;
-  padding: 20px 0;
-}
-
-.hive-map-svg {
-  width: 100%;
-  max-width: 720px;
-  height: auto;
-}
-
-.hive-center-label {
-  font-size: 16px;
-  font-weight: 700;
-  fill: #172033;
-}
-
-.hive-center-sub {
-  font-size: 11px;
-  fill: #8a94a6;
-}
-
-.hive-node-label {
-  font-size: 13px;
-  font-weight: 600;
-  fill: #172033;
-}
-
-.hive-node-sub {
-  font-size: 11px;
-  fill: #8a94a6;
-}
-
-.tooltip-title {
-  font-size: 13px;
-  font-weight: 600;
-  fill: #172033;
-}
-
-.tooltip-sub {
-  font-size: 11px;
-  fill: #8a94a6;
-}
-
-.gateway-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
-  padding: 20px 0 8px;
-  border-top: 1px solid #f0f1f5;
-  margin-top: 16px;
-}
-
-.legend-state {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.legend-state-label {
-  font-size: 0.82rem;
-  color: #8a94a6;
-  font-weight: 500;
-}
-
-.legend-navigate {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #172033;
-  margin-left: 4px;
-}
-
-/* ===== Placeholder Page ===== */
+/* ===== 10. Placeholder Page ===== */
 .placeholder-page {
   display: flex;
   flex-direction: column;
@@ -729,7 +616,7 @@ code {
 }
 
 .placeholder-icon {
-  color: #f6b33b;
+  color: var(--honey);
   margin-bottom: 16px;
   opacity: 0.6;
 }
@@ -737,13 +624,13 @@ code {
 .placeholder-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 8px;
 }
 
 .placeholder-subtitle {
   font-size: 0.92rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0 0 16px;
 }
 
@@ -754,13 +641,13 @@ code {
   font-style: italic;
 }
 
-/* ===== Holdings Page ===== */
+/* ===== 11. Holdings Page ===== */
 .holdings-page-section {
   margin-bottom: 24px;
 }
 
 .holdings-filter-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -770,7 +657,7 @@ code {
 .holdings-filter-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 16px;
 }
 
@@ -782,10 +669,10 @@ code {
 
 .holdings-filter-btn {
   padding: 10px 24px;
-  border: 1px solid #e1e5ee;
+  border: 1px solid var(--line-darker);
   border-radius: 999px;
-  background: #ffffff;
-  color: #58627a;
+  background: var(--card);
+  color: var(--muted-darker);
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
@@ -793,19 +680,19 @@ code {
 }
 
 .holdings-filter-btn:hover {
-  border-color: #f6b33b;
-  color: #172033;
+  border-color: var(--honey);
+  color: var(--ink);
 }
 
 .holdings-filter-btn.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  border-color: #f6b33b;
-  color: #172033;
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  border-color: var(--honey);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .holdings-ledger-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -815,7 +702,7 @@ code {
 .holdings-ledger-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 16px;
 }
 
@@ -828,7 +715,7 @@ code {
   text-align: left;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #8a94a6;
+  color: var(--muted);
   padding: 12px 14px;
   border-bottom: 1px solid #f0f1f5;
   text-transform: uppercase;
@@ -838,7 +725,7 @@ code {
 .holdings-ledger-table td {
   padding: 16px 14px;
   font-size: 0.88rem;
-  color: #172033;
+  color: var(--ink);
   border-bottom: 1px solid #f6f7fb;
 }
 
@@ -855,12 +742,12 @@ code {
 }
 
 .ledger-pl-positive {
-  color: #27ae60;
+  color: var(--success);
   font-weight: 600;
 }
 
 .ledger-pl-negative {
-  color: #e74c3c;
+  color: var(--danger);
   font-weight: 600;
 }
 
@@ -877,22 +764,22 @@ code {
 .conflict-label {
   font-size: 1rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   white-space: nowrap;
 }
 
 .conflict-detail {
   font-size: 0.88rem;
-  color: #58627a;
+  color: var(--muted-darker);
 }
 
-/* ===== Performance Page ===== */
+/* ===== 12. Performance Page ===== */
 .performance-page-section {
   margin-bottom: 24px;
 }
 
 .performance-chart-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -902,18 +789,14 @@ code {
 .performance-chart-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 4px;
 }
 
 .performance-chart-subtitle {
   font-size: 0.85rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0 0 24px;
-}
-
-.performance-chart-wrapper {
-  width: 100%;
 }
 
 .performance-insights-row {
@@ -923,7 +806,7 @@ code {
 }
 
 .performance-insight-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -932,7 +815,7 @@ code {
 
 .insight-label {
   font-size: 0.85rem;
-  color: #58627a;
+  color: var(--muted-darker);
   margin: 0 0 8px;
   font-weight: 500;
 }
@@ -945,11 +828,11 @@ code {
 
 .insight-detail {
   font-size: 0.82rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
-/* ===== Analysis Page ===== */
+/* ===== 13. Analysis Page ===== */
 .analysis-page-section {
   margin-bottom: 24px;
 }
@@ -962,7 +845,7 @@ code {
 }
 
 .analysis-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -972,7 +855,7 @@ code {
 .analysis-card-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 20px;
 }
 
@@ -1001,12 +884,12 @@ code {
 .allocation-xray-content .donut-value {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
 }
 
 .allocation-xray-content .donut-sub {
   font-size: 0.75rem;
-  color: #8a94a6;
+  color: var(--muted);
 }
 
 .allocation-xray-content .allocation-legend {
@@ -1023,13 +906,13 @@ code {
 }
 
 .allocation-xray-content .legend-name {
-  color: #58627a;
+  color: var(--muted-darker);
   flex: 1;
 }
 
 .allocation-xray-content .legend-value {
   font-weight: 600;
-  color: #172033;
+  color: var(--ink);
 }
 
 .concentration-content {
@@ -1058,12 +941,12 @@ code {
 .concentration-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
 }
 
 .concentration-sub {
   font-size: 0.72rem;
-  color: #8a94a6;
+  color: var(--muted);
 }
 
 .concentration-info {
@@ -1075,13 +958,13 @@ code {
 .concentration-status {
   font-size: 0.92rem;
   font-weight: 600;
-  color: #27ae60;
+  color: var(--success);
   margin: 0;
 }
 
 .concentration-detail {
   font-size: 0.82rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -1104,23 +987,23 @@ code {
 .review-note-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 2px;
 }
 
 .review-note-detail {
   font-size: 0.82rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
-/* ===== Settings Page ===== */
+/* ===== 14. Settings Page ===== */
 .settings-page-section {
   margin-bottom: 24px;
 }
 
 .settings-card {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 20px;
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
@@ -1134,13 +1017,13 @@ code {
 .settings-card-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #172033;
+  color: var(--ink);
   margin: 0 0 4px;
 }
 
 .settings-card-subtitle {
   font-size: 0.85rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0 0 24px;
 }
 
@@ -1155,7 +1038,7 @@ code {
   border-radius: 12px;
   border: 2px solid transparent;
   transition: border-color 0.15s ease;
-  background: #ffffff;
+  background: var(--card);
 }
 
 .theme-logo-preview.dark {
@@ -1163,7 +1046,7 @@ code {
 }
 
 .theme-logo-preview.active {
-  border-color: #f6b33b;
+  border-color: var(--honey);
 }
 
 .theme-logo-img {
@@ -1180,10 +1063,10 @@ code {
 
 .theme-mode-btn {
   padding: 10px 28px;
-  border: 1px solid #e1e5ee;
+  border: 1px solid var(--line-darker);
   border-radius: 999px;
-  background: #ffffff;
-  color: #58627a;
+  background: var(--card);
+  color: var(--muted-darker);
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
@@ -1191,14 +1074,14 @@ code {
 }
 
 .theme-mode-btn:hover {
-  border-color: #f6b33b;
-  color: #172033;
+  border-color: var(--honey);
+  color: var(--ink);
 }
 
 .theme-mode-btn.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  border-color: #f6b33b;
-  color: #172033;
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  border-color: var(--honey);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -1216,10 +1099,10 @@ code {
 
 .data-mode-btn {
   padding: 10px 24px;
-  border: 1px solid #e1e5ee;
+  border: 1px solid var(--line-darker);
   border-radius: 999px;
-  background: #ffffff;
-  color: #58627a;
+  background: var(--card);
+  color: var(--muted-darker);
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
@@ -1227,20 +1110,20 @@ code {
 }
 
 .data-mode-btn:hover {
-  border-color: #f6b33b;
-  color: #172033;
+  border-color: var(--honey);
+  color: var(--ink);
 }
 
 .data-mode-btn.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  border-color: #f6b33b;
-  color: #172033;
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  border-color: var(--honey);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .settings-hint {
   font-size: 0.85rem;
-  color: #8a94a6;
+  color: var(--muted);
   margin: 0;
 }
 
@@ -1255,441 +1138,136 @@ code {
 
 .motion-item {
   font-size: 0.92rem;
-  color: #172033;
+  color: var(--ink);
   margin: 0;
 }
 
-/* ===== Dark Mode ===== */
+/* ===== 15. Dark Mode ===== */
 .dark {
-  color: #e8e6e3;
-  background: #08090c;
+  --bg: #08090c;
+  --card: #0d0d16;
+  --ink: #e8e6e3;
+  --muted: #6b7280;
+  --muted-darker: #9ca3af;
+  --line: #1a1a1a;
+  --line-darker: #1a1a1a;
+  --honey-soft: #1a1a1a;
 }
 
 .dark .app-container {
-  background: #08090c;
+  background: var(--bg);
 }
 
 .dark .sidebar {
-  background: #0d0d16;
-  border-right-color: #1a1a1a;
-}
-
-.dark .sidebar-section-label {
-  color: #e4d6b8;
+  background: var(--card);
+  border-right-color: var(--line);
 }
 
 .dark .sidebar-nav-item {
-  color: #e4d6b8;
+  color: var(--ink);
 }
 
 .dark .sidebar-nav-item:hover {
   background: #1a1a1a;
-  color: #e4d6b8;
 }
 
 .dark .sidebar-nav-item.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  color: #e4d6b8;
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  color: var(--ink);
 }
 
 .dark .sidebar-nav-item.active svg {
-  color: #172033;
+  color: var(--ink);
 }
 
 .dark .sidebar-health-card {
   background: #111111;
-  border-color: #1a1a1a;
+  border-color: var(--line);
 }
 
-.dark .health-label {
-  color: #6b7280;
-}
-
-.dark .health-time {
-  color: #6b7280;
-}
-
-.dark .main-content {
-  color: #e8e6e3;
-}
-
-.dark .page-title {
-  color: #e8e6e3;
-}
-
-.dark .page-subtitle {
-  color: #6b7280;
+.dark .metric-card,
+.dark .chart-card,
+.dark .holdings-card,
+.dark .notes-card,
+.dark .gateway-card,
+.dark .holdings-filter-card,
+.dark .holdings-ledger-card,
+.dark .performance-chart-card,
+.dark .performance-insight-card,
+.dark .analysis-card,
+.dark .settings-card {
+  background: var(--card);
+  border-color: var(--line);
 }
 
 .dark .theme-toggle {
   background: #111111;
-  border-color: #1a1a1a;
-  color: #e8e6e3;
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 .dark .theme-toggle:hover {
-  border-color: #f6b33b;
+  border-color: var(--honey);
 }
 
 .dark .add-button {
-  background: linear-gradient(135deg, #f6b33b, #e8a020);
-  color: #172033;
+  background: linear-gradient(135deg, var(--honey), var(--honey-dark));
+  color: var(--ink);
 }
 
 .dark code {
   background: #1a1a1a;
-  color: #ffd66b;
+  color: var(--honey-light);
 }
 
-/* Dark Metric Cards */
-.dark .metric-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .metric-label {
-  color: #6b7280;
-}
-
-.dark .metric-value {
-  color: #e8e6e3;
-}
-
-.dark .metric-detail {
-  color: #6b7280;
-}
-
-/* Dark Chart Cards */
-.dark .chart-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .chart-title {
-  color: #e8e6e3;
-}
-
-.dark .chart-subtitle {
-  color: #6b7280;
-}
-
-.dark .donut-value {
-  color: #e8e6e3;
-}
-
-.dark .donut-sub {
-  color: #6b7280;
-}
-
-.dark .legend-name {
-  color: #9ca3af;
-}
-
-.dark .legend-value {
-  color: #e8e6e3;
-}
-
-/* Dark Bottom Row */
-.dark .holdings-card,
-.dark .notes-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .section-title {
-  color: #e8e6e3;
-}
-
-.dark .holdings-table th {
-  color: #6b7280;
-  border-bottom-color: #1a1a1a;
-}
-
-.dark .holdings-table td {
-  color: #e8e6e3;
-  border-bottom-color: #1a1a1a;
-}
-
-.dark .note-title {
-  color: #e8e6e3;
-}
-
-.dark .note-detail {
-  color: #6b7280;
-}
-
-/* Dark Gateway Page */
-.dark .gateway-card {
-  background: #0d0d16;
-  border-color: #1a1a1a;
-}
-
-.dark .gateway-main-title {
-  color: #e4d6b8;
-}
-
-.dark .gateway-main-subtitle {
-  color: #e4d6b8;
-}
-
-.dark .hover-hint-sub {
-  color: #e4d6b8;
-}
-
-.dark .hive-center-label {
-  fill: #e4d6b8;
-}
-
-.dark .hive-center-sub {
-  fill: #e4d6b8;
-}
-
-.dark .hive-node-label {
-  fill: #e4d6b8;
-}
-
-.dark .hive-node-sub {
-  fill: #e4d6b8;
-}
-
-.dark .tooltip-title {
-  fill: #172033;
-}
-
-.dark .tooltip-sub {
-  fill: #8a94a6;
-}
-
-.dark .gateway-legend {
-  border-top-color: #1a1a1a;
-}
-
-.dark .legend-state-label {
-  color: #e4d6b8;
-}
-
-.dark .legend-navigate {
-  color: #e4d6b8;
-}
-
-/* Dark Placeholder */
-.dark .placeholder-title {
-  color: #e8e6e3;
-}
-
-.dark .placeholder-subtitle {
-  color: #6b7280;
-}
-
-/* Dark Holdings Page */
-.dark .holdings-filter-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .holdings-filter-title {
-  color: #e8e6e3;
-}
-
-.dark .holdings-filter-btn {
+.dark .holdings-filter-btn,
+.dark .theme-mode-btn,
+.dark .data-mode-btn {
   background: #111111;
-  border-color: #1a1a1a;
-  color: #9ca3af;
+  border-color: var(--line);
+  color: var(--muted-darker);
 }
 
-.dark .holdings-filter-btn:hover {
-  border-color: #f6b33b;
-  color: #e8e6e3;
+.dark .holdings-filter-btn:hover,
+.dark .theme-mode-btn:hover,
+.dark .data-mode-btn:hover {
+  border-color: var(--honey);
+  color: var(--ink);
 }
 
-.dark .holdings-filter-btn.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  border-color: #f6b33b;
-  color: #172033;
-}
-
-.dark .holdings-ledger-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .holdings-ledger-title {
-  color: #e8e6e3;
-}
-
-.dark .holdings-ledger-table th {
-  color: #6b7280;
-  border-bottom-color: #1a1a1a;
-}
-
-.dark .holdings-ledger-table td {
-  color: #e8e6e3;
-  border-bottom-color: #1a1a1a;
+.dark .holdings-filter-btn.active,
+.dark .theme-mode-btn.active,
+.dark .data-mode-btn.active {
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  border-color: var(--honey);
+  color: var(--ink);
 }
 
 .dark .holdings-conflict-card {
   background: #111111;
-  border-color: #1a1a1a;
+  border-color: var(--line);
 }
 
-.dark .conflict-label {
-  color: #e8e6e3;
+/* Dark SVG fills */
+.dark .hive-center-label,
+.dark .hive-node-label {
+  fill: var(--ink);
 }
 
-.dark .conflict-detail {
-  color: #9ca3af;
+.dark .hive-center-sub,
+.dark .hive-node-sub {
+  fill: var(--muted);
 }
 
-/* Dark Performance Page */
-.dark .performance-chart-card {
-  background: #08090c;
-  border-color: #1a1a1a;
+.dark .tooltip-title {
+  fill: var(--ink);
 }
 
-.dark .performance-chart-title {
-  color: #e8e6e3;
+.dark .tooltip-sub {
+  fill: var(--muted);
 }
 
-.dark .performance-chart-subtitle {
-  color: #6b7280;
-}
-
-.dark .performance-insight-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .insight-label {
-  color: #9ca3af;
-}
-
-.dark .insight-value {
-  color: #e8e6e3;
-}
-
-.dark .insight-detail {
-  color: #6b7280;
-}
-
-/* Dark Analysis Page */
-.dark .analysis-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .analysis-card-title {
-  color: #e8e6e3;
-}
-
-.dark .allocation-xray-content .donut-value {
-  color: #e8e6e3;
-}
-
-.dark .allocation-xray-content .donut-sub {
-  color: #6b7280;
-}
-
-.dark .allocation-xray-content .legend-name {
-  color: #9ca3af;
-}
-
-.dark .allocation-xray-content .legend-value {
-  color: #e8e6e3;
-}
-
-.dark .concentration-value {
-  color: #e8e6e3;
-}
-
-.dark .concentration-sub {
-  color: #6b7280;
-}
-
-.dark .concentration-detail {
-  color: #6b7280;
-}
-
-.dark .review-note-title {
-  color: #e8e6e3;
-}
-
-.dark .review-note-detail {
-  color: #6b7280;
-}
-
-/* Dark Settings Page */
-.dark .settings-card {
-  background: #08090c;
-  border-color: #1a1a1a;
-}
-
-.dark .settings-card-title {
-  color: #e8e6e3;
-}
-
-.dark .settings-card-subtitle {
-  color: #6b7280;
-}
-
-.dark .theme-logo-preview {
-  background: #ffffff;
-}
-
-.dark .theme-logo-preview.dark {
-  background: #08090c;
-}
-
-.dark .theme-mode-btn {
-  background: #111111;
-  border-color: #1a1a1a;
-  color: #9ca3af;
-}
-
-.dark .theme-mode-btn:hover {
-  border-color: #f6b33b;
-  color: #e8e6e3;
-}
-
-.dark .theme-mode-btn.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  border-color: #f6b33b;
-  color: #172033;
-}
-
-.dark .data-mode-btn {
-  background: #111111;
-  border-color: #1a1a1a;
-  color: #9ca3af;
-}
-
-.dark .data-mode-btn:hover {
-  border-color: #f6b33b;
-  color: #e8e6e3;
-}
-
-.dark .data-mode-btn.active {
-  background: linear-gradient(135deg, #f6b33b, #ffd66b);
-  border-color: #f6b33b;
-  color: #172033;
-}
-
-.dark .settings-hint {
-  color: #6b7280;
-}
-
-.dark .motion-item {
-  color: #e8e6e3;
-}
-
-.dark .hive-center-label {
-  fill: #e8e6e3;
-}
-
-.dark .hive-center-sub {
-  fill: #6b7a90;
-}
-
-/* ===== Responsive ===== */
+/* ===== 16. Responsive ===== */
 @media (max-width: 1024px) {
   .metric-cards-row {
     grid-template-columns: repeat(2, 1fr);
@@ -1700,6 +1278,18 @@ code {
   }
 
   .bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-insights-row {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-top-row {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-bottom-row {
     grid-template-columns: 1fr;
   }
 }
@@ -1725,5 +1315,57 @@ code {
 
   .allocation-content {
     flex-direction: column;
+  }
+
+  .allocation-xray-content {
+    flex-direction: column;
+  }
+
+  .concentration-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .theme-preview-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .theme-toggle-group {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .gateway-header-row {
+    flex-direction: column;
+  }
+
+  .gateway-hover-hint {
+    text-align: left;
+  }
+
+  .gateway-legend {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 16px 12px;
+  }
+
+  .gateway-brand-area {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .holdings-filter-buttons {
+    flex-direction: column;
+  }
+
+  .holdings-conflict-card {
+    flex-direction: column;
+    text-align: center;
   }
 }

@@ -50,6 +50,7 @@ public class PortfolioCalculator {
             } else {
                 unpricedHoldings.add(new UnpricedHolding(
                     holding.holdingId(),
+                    holding.assetType(),
                     holding.ticker(),
                     "PRICE_UNAVAILABLE"
                 ));
@@ -106,6 +107,7 @@ public class PortfolioCalculator {
         return pricedHoldings.stream()
             .map(priced -> new PortfolioAllocation(
                 priced.holding().holdingId(),
+                priced.holding().assetType(),
                 priced.holding().ticker(),
                 scaled(priced.marketValue()),
                 priced.marketValue()

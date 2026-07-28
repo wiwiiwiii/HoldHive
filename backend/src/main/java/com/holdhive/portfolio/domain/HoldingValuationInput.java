@@ -7,6 +7,7 @@ import com.holdhive.pricing.domain.PriceStatus;
 
 public record HoldingValuationInput(
     Long holdingId,
+    AssetType assetType,
     String ticker,
     BigDecimal quantity,
     BigDecimal averagePurchasePrice,
@@ -14,4 +15,7 @@ public record HoldingValuationInput(
     PriceStatus priceStatus,
     Instant priceObservedAt
 ) {
+    public HoldingValuationInput {
+        assetType = assetType == null ? AssetType.STOCK : assetType;
+    }
 }

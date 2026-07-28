@@ -1,4 +1,5 @@
-import { Hexagon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Hexagon, RefreshCw } from 'lucide-react';
 import {
     PieChart,
     Pie,
@@ -10,20 +11,22 @@ import {
     Area,
     AreaChart,
 } from 'recharts';
+import { API_BASE_URL, fetchFundLookthrough, fetchPortfolioSummary } from '../api/portfolioApi';
+import type {
+    AllocationResponse,
+    AssetType,
+    FundLookthroughResponse,
+    PortfolioSummaryResponse,
+} from '../api/types';
 
-const METRIC_CARDS = [
-    { label: 'Total Value', value: '$21,794.75', detail: '+8.9% vs cost', positive: true },
-    { label: 'Cost Basis', value: '$20,001.50', detail: '5 priced holdings', positive: null },
-    { label: 'Unrealized P/L', value: '+$1,793.25', detail: 'partial valuation', positive: true },
-    { label: 'Data Mode', value: 'DEMO', detail: 'fixed demo prices', positive: null },
-];
-
-const ALLOCATION_DATA = [
-    { name: 'Stocks', value: 63, color: '#4F86F7' },
-    { name: 'Cash', value: 28, color: '#F5A623' },
-    { name: 'ETF', value: 6, color: '#9B59B6' },
-    { name: 'Unpriced', value: 3, color: '#BDC3C7' },
-];
+const ASSET_COLORS: Record<AssetType, string> = {
+    STOCK: '#4F86F7',
+    ETF: '#9B59B6',
+    MUTUAL_FUND: '#0f766e',
+    CRYPTO: '#f59e0b',
+    CASH: '#F5A623',
+    BANK_DEPOSIT: '#64748b',
+};
 
 const PERFORMANCE_DATA = [
     { date: 'Jan', value: 18200 },
@@ -50,24 +53,134 @@ const PORTFOLIO_NOTES = [
     { title: 'Demo data', detail: 'Fixed values for training' },
 ];
 
+function formatMoney(value?: number, currency = 'USD') {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+    }).format(value ?? 0);
+}
+
+function formatPercent(value?: number | null) {
+    if (value === null || value === undefined) return '—';
+    return `${value.toFixed(2)}%`;
+}
+
 export function DashboardPage() {
+    const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
+    const [fundLookthrough, setFundLookthrough] = useState<FundLookthroughResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    async function refreshSummary() {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const nextSummary = await fetchPortfolioSummary();
+            setSummary(nextSummary);
+            await refreshFundLookthrough(nextSummary);
+        } catch (caught) {
+            setError(caught instanceof Error ? caught.message : 'Unable to load portfolio summary.');
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        void refreshSummary();
+    }, []);
+
+    async function refreshFundLookthrough(nextSummary: PortfolioSummaryResponse) {
+        const firstFund = nextSummary.allocations.find(
+            (a) => a.assetType === 'ETF' || a.assetType === 'MUTUAL_FUND'
+        );
+        if (!firstFund) {
+            setFundLookthrough(null);
+            return;
+        }
+        try {
+            const nextLookthrough = await fetchFundLookthrough(firstFund.holdingId);
+            setFundLookthrough(nextLookthrough);
+        } catch {
+            setFundLookthrough(null);
+        }
+    }
+
+    const allocations = summary?.allocations ?? [];
+    const baseCurrency = summary?.baseCurrency ?? 'USD';
+
+    const metricCards = useMemo(
+        () => [
+            {
+                label: 'Total Value',
+                value: formatMoney(summary?.totalMarketValue, baseCurrency),
+                detail: summary ? `${summary.valuationStatus} valuation` : 'Loading',
+                positive: null as boolean | null,
+            },
+            {
+                label: 'Unrealized P/L',
+                value: formatMoney(summary?.totalUnrealizedGainLoss, baseCurrency),
+                detail: `${formatPercent(summary?.totalUnrealizedGainLossPercent)} total return`,
+                positive: (summary?.totalUnrealizedGainLoss ?? 0) >= 0,
+            },
+            {
+                label: 'Priced Holdings',
+                value: `${summary?.pricedHoldingCount ?? 0}/${summary?.holdingCount ?? 0}`,
+                detail: summary?.priceAsOf
+                    ? `As of ${new Date(summary.priceAsOf).toLocaleString()}`
+                    : 'Fixed assets need no quote',
+                positive: null,
+            },
+            {
+                label: 'Data Mode',
+                value: 'DEMO',
+                detail: 'fixed demo prices',
+                positive: null,
+            },
+        ],
+        [baseCurrency, summary]
+    );
+
+    const allocationChartData = allocations.length > 0
+        ? allocations.map((a) => ({
+            name: a.ticker,
+            value: a.marketValue,
+            color: ASSET_COLORS[a.assetType] ?? '#BDC3C7',
+        }))
+        : [
+            { name: 'Stocks', value: 63, color: '#4F86F7' },
+            { name: 'Cash', value: 28, color: '#F5A623' },
+            { name: 'ETF', value: 6, color: '#9B59B6' },
+            { name: 'Unpriced', value: 3, color: '#BDC3C7' },
+        ];
+
+    const totalAllocationValue = allocationChartData.reduce((sum, d) => sum + d.value, 0);
+
     return (
         <>
+            {error && (
+                <div className="metric-cards-row">
+                    <div className="metric-card" style={{ borderColor: '#e74c3c' }}>
+                        <p className="metric-detail negative" role="alert">{error}</p>
+                    </div>
+                </div>
+            )}
+
             <section className="metric-cards-row">
-                {METRIC_CARDS.map((card) => (
+                {metricCards.map((card) => (
                     <div className="metric-card" key={card.label}>
                         <div className="metric-header">
                             <Hexagon size={20} className="metric-icon" />
                             <span className="metric-label">{card.label}</span>
                         </div>
-                        <p className="metric-value">{card.value}</p>
+                        <p className="metric-value">{isLoading && !summary ? '—' : card.value}</p>
                         <span
                             className={`metric-detail ${
                                 card.positive === true ? 'positive' : card.positive === false ? 'negative' : ''
                             }`}
                         >
-              {card.detail}
-            </span>
+                            {card.detail}
+                        </span>
                     </div>
                 ))}
             </section>
@@ -81,7 +194,7 @@ export function DashboardPage() {
                             <ResponsiveContainer width="100%" height={200}>
                                 <PieChart>
                                     <Pie
-                                        data={ALLOCATION_DATA}
+                                        data={allocationChartData}
                                         cx="50%"
                                         cy="50%"
                                         innerRadius={55}
@@ -90,12 +203,12 @@ export function DashboardPage() {
                                         dataKey="value"
                                         strokeWidth={0}
                                     >
-                                        {ALLOCATION_DATA.map((entry) => (
+                                        {allocationChartData.map((entry) => (
                                             <Cell key={entry.name} fill={entry.color} />
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        formatter={(value: number) => [`${value}%`, '']}
+                                        formatter={(value: number) => [formatMoney(value, baseCurrency), '']}
                                         contentStyle={{
                                             borderRadius: 12,
                                             border: 'none',
@@ -105,16 +218,22 @@ export function DashboardPage() {
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="donut-center-label">
-                                <span className="donut-value">$21.8k</span>
+                                <span className="donut-value">
+                                    {formatMoney(totalAllocationValue, baseCurrency)}
+                                </span>
                                 <span className="donut-sub">priced value</span>
                             </div>
                         </div>
                         <div className="allocation-legend">
-                            {ALLOCATION_DATA.map((item) => (
+                            {allocationChartData.map((item) => (
                                 <div className="legend-item" key={item.name}>
                                     <span className="legend-dot" style={{ backgroundColor: item.color }} />
                                     <span className="legend-name">{item.name}</span>
-                                    <span className="legend-value">{item.value}%</span>
+                                    <span className="legend-value">
+                                        {totalAllocationValue > 0
+                                            ? `${((item.value / totalAllocationValue) * 100).toFixed(0)}%`
+                                            : '0%'}
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -201,6 +320,37 @@ export function DashboardPage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+
+                    {fundLookthrough && (
+                        <div style={{ marginTop: 16 }}>
+                            <h2 className="section-title">Fund Look-through</h2>
+                            <p className="note-detail">
+                                {fundLookthrough.ticker} — {formatPercent(fundLookthrough.coveragePercent)} covered
+                            </p>
+                            {fundLookthrough.holdings.map((h) => (
+                                <div key={h.ticker} className="note-item">
+                                    <div>
+                                        <p className="note-title">{h.ticker} — {h.displayName}</p>
+                                        <p className="note-detail">{formatPercent(h.weightPercent)}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {fundLookthrough.warnings[0] && (
+                                <p className="metric-detail negative">{fundLookthrough.warnings[0]}</p>
+                            )}
+                        </div>
+                    )}
+
+                    <div style={{ marginTop: 12 }}>
+                        <button
+                            className="theme-toggle"
+                            onClick={() => void refreshSummary()}
+                            style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+                        >
+                            <RefreshCw size={14} className={isLoading ? 'spin-icon' : undefined} />
+                            {isLoading ? 'Refreshing' : 'Refresh'}
+                        </button>
                     </div>
                 </div>
             </section>
