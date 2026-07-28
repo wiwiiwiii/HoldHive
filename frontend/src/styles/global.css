@@ -174,7 +174,7 @@ code {
 .content-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 28px;
 }
 
@@ -479,6 +479,8 @@ code {
   padding: 32px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .gateway-header-row {
@@ -652,6 +654,8 @@ code {
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  max-width: 1000px;
+  margin: 0 auto 24px;
 }
 
 .holdings-filter-title {
@@ -697,6 +701,8 @@ code {
   padding: 24px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  max-width: 1000px;
+  margin: 0 auto 24px;
 }
 
 .holdings-ledger-title {
@@ -733,6 +739,151 @@ code {
   border-bottom: none;
 }
 
+.ledger-pl-negative {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.ledger-action-cell {
+  text-align: right;
+  padding: 16px 14px !important;
+}
+
+.ledger-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ledger-delete-btn:hover {
+  background: #fde8e8;
+  color: var(--danger);
+}
+
+.holdings-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.holdings-empty-icon {
+  color: var(--muted);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.holdings-empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.holdings-empty-text {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Delete confirmation dialog */
+.delete-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+.delete-dialog {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.2s ease;
+}
+
+.delete-dialog-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+
+.delete-dialog-text {
+  font-size: 0.92rem;
+  color: var(--muted-darker);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.delete-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.delete-dialog-cancel {
+  padding: 10px 24px;
+  border: 1px solid var(--line-darker);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delete-dialog-cancel:hover {
+  border-color: var(--muted);
+  background: #f6f7fb;
+}
+
+.delete-dialog-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.delete-dialog-confirm:hover {
+  background: var(--danger-dark);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .ledger-symbol {
   font-weight: 600;
 }
@@ -759,6 +910,8 @@ code {
   display: flex;
   align-items: center;
   gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .conflict-label {
@@ -784,6 +937,8 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .performance-chart-title {
@@ -803,6 +958,8 @@ code {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .performance-insight-card {
@@ -842,6 +999,9 @@ code {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 24px;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .analysis-card {
@@ -850,6 +1010,8 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  max-width: 1000px;
+  margin: 0 auto 24px;
 }
 
 .analysis-card-title {
@@ -1008,6 +1170,8 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .settings-card-wide {
@@ -1089,6 +1253,8 @@ code {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .data-mode-buttons {
@@ -1267,6 +1433,353 @@ code {
   fill: var(--muted);
 }
 
+/* ===== 15. Add Holding Page ===== */
+.add-holding-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+}
+
+.add-holding-form-card,
+.add-holding-preview-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
+  border: 1px solid var(--line);
+}
+
+.add-holding-form-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.add-holding-form-subtitle {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0 0 28px;
+}
+
+.add-holding-field {
+  margin-bottom: 20px;
+}
+
+.add-holding-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted-darker);
+  margin-bottom: 8px;
+}
+
+.add-holding-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line-darker);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.add-holding-input:focus {
+  border-color: var(--honey);
+}
+
+.add-holding-input::placeholder {
+  color: var(--muted);
+}
+
+.add-holding-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.add-holding-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.add-holding-save-btn {
+  padding: 14px 36px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--honey), var(--honey-dark));
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-holding-save-btn:hover {
+  background: linear-gradient(135deg, var(--honey-dark), var(--honey-darker));
+  transform: translateY(-1px);
+}
+
+.add-holding-cancel-btn {
+  padding: 14px 36px;
+  border: 1px solid var(--line-darker);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-holding-cancel-btn:hover {
+  border-color: var(--muted);
+  background: #f6f7fb;
+}
+
+.add-holding-preview-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 24px;
+}
+
+.add-holding-preview-hex {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.add-holding-hex-ticker {
+  font-size: 2rem;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.add-holding-hex-shares {
+  font-size: 0.88rem;
+  fill: var(--muted);
+}
+
+.add-holding-preview-cost {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.add-holding-cost-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.add-holding-cost-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.add-holding-preview-note {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Dark Add Holding Page */
+.dark .add-holding-form-card,
+.dark .add-holding-preview-card {
+  background: #16151c;
+  border-color: #2a2a35;
+}
+
+.dark .add-holding-input {
+  background: #0d0d14;
+  border-color: #2a2a35;
+  color: #e8e6e3;
+}
+
+.dark .add-holding-input:focus {
+  border-color: var(--honey);
+}
+
+.dark .add-holding-cancel-btn {
+  border-color: #2a2a35;
+  color: #e8e6e3;
+}
+
+.dark .add-holding-cancel-btn:hover {
+  border-color: var(--honey);
+  background: #1a1a24;
+}
+
+.dark .add-holding-hex-ticker {
+  fill: #e8e6e3;
+}
+
+.dark .add-holding-hex-shares {
+  fill: #8896aa;
+}
+
+.add-holding-input.input-error {
+  border-color: var(--danger);
+}
+
+.add-holding-hint.hint-error {
+  color: var(--danger);
+}
+
+.dark .add-holding-input.input-error {
+  border-color: var(--danger);
+}
+
+.dark .add-holding-hint.hint-error {
+  color: var(--danger);
+}
+
+.dark .holdings-conflict-card {
+  background: #111111;
+  border-color: var(--line);
+}
+
+.dark .ledger-delete-btn:hover {
+  background: #2a1515;
+  color: var(--danger);
+}
+
+.dark .holdings-empty-icon {
+  color: #6b7280;
+}
+
+.dark .delete-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.dark .delete-dialog {
+  background: #16151c;
+  border: 1px solid #2a2a35;
+}
+
+.dark .delete-dialog-cancel {
+  border-color: #2a2a35;
+  color: #e8e6e3;
+}
+
+.dark .delete-dialog-cancel:hover {
+  border-color: #8896aa;
+  background: #1a1a24;
+}
+
+.price-status-demo {
+  font-size: 0.72rem;
+  color: var(--honey);
+  font-weight: 500;
+}
+
+.holdings-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.holdings-empty-icon {
+  color: var(--muted);
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.holdings-empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.holdings-empty-text {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.dark .holdings-empty-icon {
+  color: #6b7280;
+}
+
+.dark .price-status-demo {
+  color: var(--honey-light);
+}
+
+.concentration-status.concentration-alert {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.holdings-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fde8e8;
+  border: 1px solid #f5c6cb;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+}
+
+.holdings-error-banner p {
+  color: var(--danger-dark);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.holdings-error-retry {
+  padding: 6px 16px;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.holdings-error-retry:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.dark .holdings-error-banner {
+  background: #2a1515;
+  border-color: #3d1f1f;
+}
+
+.dark .holdings-error-banner p {
+  color: #f8a0a0;
+}
+
+.dark .holdings-error-retry {
+  border-color: #e74c3c;
+  color: #f8a0a0;
+}
+
+.dark .holdings-error-retry:hover {
+  background: #e74c3c;
+  color: #ffffff;
+}
+
+.dark .concentration-status.concentration-alert {
+  color: #f8a0a0;
+}
+
 /* ===== 16. Responsive ===== */
 @media (max-width: 1024px) {
   .metric-cards-row {
@@ -1278,6 +1791,10 @@ code {
   }
 
   .bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .add-holding-layout {
     grid-template-columns: 1fr;
   }
 

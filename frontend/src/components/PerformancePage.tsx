@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
     ResponsiveContainer,
     AreaChart,
@@ -6,8 +7,10 @@ import {
     YAxis,
     Tooltip,
 } from 'recharts';
+import { fetchHoldingsFull } from '../api/portfolioApi';
+import type { HoldingResponse } from '../api/types';
 
-const PERFORMANCE_DATA = [
+const DEMO_PERFORMANCE_DATA = [
     { date: 'Jan', value: 18200 },
     { date: 'Feb', value: 18800 },
     { date: 'Mar', value: 18500 },
@@ -21,22 +24,86 @@ const PERFORMANCE_DATA = [
     { date: 'Nov', value: 21794 },
 ];
 
-const INSIGHT_CARDS = [
-    { label: 'Best contributor', value: 'AAPL', detail: '+$1,216.25 unrealized', color: '#27ae60' },
-    { label: 'Needs review', value: 'AMZN', detail: '-$143.00 unrealized', color: '#e74c3c' },
-    { label: 'Return basis', value: 'Snapshot P/L', detail: 'Not time-weighted return', color: '#172033' },
-];
+function formatMoney(value: number): string {
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+interface InsightCard {
+    label: string;
+    value: string;
+    detail: string;
+    color: string;
+}
 
 export function PerformancePage() {
+    const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            try {
+                const data = await fetchHoldingsFull();
+                if (!cancelled) setHoldings(data);
+            } catch {
+                // keep empty on failure
+            }
+        }
+        load();
+        return () => { cancelled = true; };
+    }, []);
+
+    const insightCards = useMemo((): InsightCard[] => {
+        if (holdings.length === 0) {
+            return [
+                { label: 'Best contributor', value: '—', detail: 'No holdings yet', color: '#8a94a6' },
+                { label: 'Needs review', value: '—', detail: 'No holdings yet', color: '#8a94a6' },
+                { label: 'Return basis', value: 'Snapshot P/L', detail: 'Not time-weighted return', color: '#172033' },
+            ];
+        }
+
+        const withPl = holdings.map((h) => {
+            const costBasis = h.quantity * h.averagePurchasePrice;
+            const mv = h.marketValue ?? costBasis;
+            const pl = h.unrealizedGainLoss ?? (mv - costBasis);
+            return { ...h, pl };
+        });
+
+        const best = withPl.reduce((max, h) => h.pl > max.pl ? h : max, withPl[0]);
+        const worst = withPl.reduce((min, h) => h.pl < min.pl ? h : min, withPl[0]);
+
+        return [
+            {
+                label: 'Best contributor',
+                value: best.ticker,
+                detail: `${best.pl >= 0 ? '+' : ''}${formatMoney(best.pl)} unrealized`,
+                color: best.pl >= 0 ? '#27ae60' : '#e74c3c',
+            },
+            {
+                label: 'Needs review',
+                value: worst.ticker,
+                detail: `${worst.pl >= 0 ? '+' : ''}${formatMoney(worst.pl)} unrealized`,
+                color: worst.pl < 0 ? '#e74c3c' : '#8a94a6',
+            },
+            {
+                label: 'Return basis',
+                value: 'Snapshot P/L',
+                detail: 'Not time-weighted return',
+                color: '#172033',
+            },
+        ];
+    }, [holdings]);
+
     return (
         <>
             <section className="performance-page-section">
                 <div className="performance-chart-card">
                     <h2 className="performance-chart-title">Portfolio Value Trend</h2>
-                    <p className="performance-chart-subtitle">Current-value trend for demo data</p>
+                    <p className="performance-chart-subtitle">
+                        {holdings.length > 0 ? 'Current-value trend' : 'Demo data — add holdings for live trend'}
+                    </p>
                     <div className="performance-chart-wrapper">
                         <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={PERFORMANCE_DATA}>
+                            <AreaChart data={DEMO_PERFORMANCE_DATA}>
                                 <defs>
                                     <linearGradient id="perfTrendGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#4F86F7" stopOpacity={0.25} />
@@ -73,7 +140,7 @@ export function PerformancePage() {
             </section>
 
             <section className="performance-insights-row">
-                {INSIGHT_CARDS.map((card) => (
+                {insightCards.map((card) => (
                     <div className="performance-insight-card" key={card.label}>
                         <p className="insight-label">{card.label}</p>
                         <p className="insight-value" style={{ color: card.color }}>{card.value}</p>

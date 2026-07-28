@@ -11,12 +11,13 @@ import {
     Area,
     AreaChart,
 } from 'recharts';
-import { API_BASE_URL, fetchFundLookthrough, fetchPortfolioSummary } from '../api/portfolioApi';
+import { API_BASE_URL, fetchFundLookthrough, fetchHoldingsFull, fetchPortfolioSummary } from '../api/portfolioApi';
 import type {
-    AllocationResponse,
     AssetType,
     FundLookthroughResponse,
+    HoldingResponse,
     PortfolioSummaryResponse,
+    PriceStatus,
 } from '../api/types';
 
 const ASSET_COLORS: Record<AssetType, string> = {
@@ -28,7 +29,7 @@ const ASSET_COLORS: Record<AssetType, string> = {
     BANK_DEPOSIT: '#64748b',
 };
 
-const PERFORMANCE_DATA = [
+const DEMO_PERFORMANCE_DATA = [
     { date: 'Jan', value: 18200 },
     { date: 'Feb', value: 18800 },
     { date: 'Mar', value: 18500 },
@@ -40,17 +41,6 @@ const PERFORMANCE_DATA = [
     { date: 'Sep', value: 20500 },
     { date: 'Oct', value: 21200 },
     { date: 'Nov', value: 21794 },
-];
-
-const HOLDINGS_DATA = [
-    { symbol: 'AAPL', company: 'Apple Inc.', qty: 35, price: '$210.25', marketValue: '$7,358.75' },
-    { symbol: 'TSLA', company: 'Tesla Inc.', qty: 20, price: '$248.90', marketValue: '$4,978.00' },
-    { symbol: 'AMZN', company: 'Amazon.com Inc.', qty: 10, price: '$186.70', marketValue: '$1,867.00' },
-];
-
-const PORTFOLIO_NOTES = [
-    { title: 'AAPL concentration', detail: '33.8% of priced value' },
-    { title: 'Demo data', detail: 'Fixed values for training' },
 ];
 
 function formatMoney(value?: number, currency = 'USD') {
@@ -66,8 +56,20 @@ function formatPercent(value?: number | null) {
     return `${value.toFixed(2)}%`;
 }
 
+function getPriceStatusLabel(status: PriceStatus): string {
+    switch (status) {
+        case 'LIVE': return 'Live';
+        case 'CACHED': return 'Cached';
+        case 'DEMO': return 'Demo';
+        case 'FIXED': return 'Fixed';
+        case 'UNAVAILABLE': return 'Unavailable';
+        default: return 'Unknown';
+    }
+}
+
 export function DashboardPage() {
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
+    const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
     const [fundLookthrough, setFundLookthrough] = useState<FundLookthroughResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -76,11 +78,15 @@ export function DashboardPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const nextSummary = await fetchPortfolioSummary();
+            const [nextSummary, nextHoldings] = await Promise.all([
+                fetchPortfolioSummary(),
+                fetchHoldingsFull(),
+            ]);
             setSummary(nextSummary);
+            setHoldings(nextHoldings);
             await refreshFundLookthrough(nextSummary);
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : 'Unable to load portfolio summary.');
+            setError(caught instanceof Error ? caught.message : 'Unable to load portfolio data.');
         } finally {
             setIsLoading(false);
         }
@@ -108,6 +114,24 @@ export function DashboardPage() {
 
     const allocations = summary?.allocations ?? [];
     const baseCurrency = summary?.baseCurrency ?? 'USD';
+    const unpricedHoldings = summary?.unpricedHoldings ?? [];
+
+    const dataModeLabel = useMemo(() => {
+        if (!summary) return 'Loading';
+        const statuses = holdings.map((h) => h.priceStatus);
+        if (statuses.every((s) => s === 'LIVE')) return 'LIVE';
+        if (statuses.some((s) => s === 'DEMO')) return 'DEMO';
+        if (statuses.some((s) => s === 'CACHED')) return 'CACHED';
+        return summary.valuationStatus;
+    }, [summary, holdings]);
+
+    const dataModeDetail = useMemo(() => {
+        if (!summary) return '';
+        if (dataModeLabel === 'LIVE') return 'real-time market prices';
+        if (dataModeLabel === 'DEMO') return 'demo prices for training';
+        if (dataModeLabel === 'CACHED') return 'cached prices, may be stale';
+        return `${summary.valuationStatus} valuation`;
+    }, [summary, dataModeLabel]);
 
     const metricCards = useMemo(
         () => [
@@ -133,28 +157,67 @@ export function DashboardPage() {
             },
             {
                 label: 'Data Mode',
-                value: 'DEMO',
-                detail: 'fixed demo prices',
+                value: dataModeLabel,
+                detail: dataModeDetail,
                 positive: null,
             },
         ],
-        [baseCurrency, summary]
+        [baseCurrency, summary, dataModeLabel, dataModeDetail]
     );
 
-    const allocationChartData = allocations.length > 0
-        ? allocations.map((a) => ({
+    const allocationChartData = useMemo(() => {
+        if (allocations.length === 0) return [];
+        return allocations.map((a) => ({
             name: a.ticker,
             value: a.marketValue,
             color: ASSET_COLORS[a.assetType] ?? '#BDC3C7',
-        }))
-        : [
-            { name: 'Stocks', value: 63, color: '#4F86F7' },
-            { name: 'Cash', value: 28, color: '#F5A623' },
-            { name: 'ETF', value: 6, color: '#9B59B6' },
-            { name: 'Unpriced', value: 3, color: '#BDC3C7' },
-        ];
+        }));
+    }, [allocations]);
 
     const totalAllocationValue = allocationChartData.reduce((sum, d) => sum + d.value, 0);
+
+    const portfolioNotes = useMemo(() => {
+        const notes: { title: string; detail: string }[] = [];
+
+        if (allocations.length > 0) {
+            const maxAllocation = allocations.reduce((max, a) =>
+                    a.allocationPercent > max.allocationPercent ? a : max
+                , allocations[0]);
+            if (maxAllocation.allocationPercent > 40) {
+                notes.push({
+                    title: `${maxAllocation.ticker} concentration`,
+                    detail: `${formatPercent(maxAllocation.allocationPercent)} of priced value`,
+                });
+            }
+        }
+
+        const demoCount = holdings.filter((h) => h.priceStatus === 'DEMO').length;
+        if (demoCount > 0) {
+            notes.push({
+                title: 'Demo prices',
+                detail: `${demoCount} holding${demoCount > 1 ? 's' : ''} use demo values.`,
+            });
+        }
+
+        const unpricedCount = unpricedHoldings.length;
+        if (unpricedCount > 0) {
+            notes.push({
+                title: 'Unpriced holdings',
+                detail: `${unpricedCount} holding${unpricedCount > 1 ? 's' : ''} have no price.`,
+            });
+        }
+
+        if (notes.length === 0 && summary) {
+            notes.push({
+                title: 'All priced',
+                detail: `All ${summary.pricedHoldingCount} holdings have valid prices.`,
+            });
+        }
+
+        return notes;
+    }, [allocations, holdings, unpricedHoldings, summary]);
+
+    const displayPerformanceData = DEMO_PERFORMANCE_DATA;
 
     return (
         <>
@@ -189,63 +252,73 @@ export function DashboardPage() {
                 <div className="chart-card allocation-card">
                     <h2 className="chart-title">Asset Allocation</h2>
                     <p className="chart-subtitle">Distribution by priced market value</p>
-                    <div className="allocation-content">
-                        <div className="donut-wrapper">
-                            <ResponsiveContainer width="100%" height={200}>
-                                <PieChart>
-                                    <Pie
-                                        data={allocationChartData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={55}
-                                        outerRadius={90}
-                                        paddingAngle={2}
-                                        dataKey="value"
-                                        strokeWidth={0}
-                                    >
-                                        {allocationChartData.map((entry) => (
-                                            <Cell key={entry.name} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        formatter={(value: number) => [formatMoney(value, baseCurrency), '']}
-                                        contentStyle={{
-                                            borderRadius: 12,
-                                            border: 'none',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="donut-center-label">
-                                <span className="donut-value">
-                                    {formatMoney(totalAllocationValue, baseCurrency)}
-                                </span>
-                                <span className="donut-sub">priced value</span>
+                    {allocationChartData.length > 0 ? (
+                        <div className="allocation-content">
+                            <div className="donut-wrapper">
+                                <ResponsiveContainer width="100%" height={200}>
+                                    <PieChart>
+                                        <Pie
+                                            data={allocationChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={55}
+                                            outerRadius={90}
+                                            paddingAngle={2}
+                                            dataKey="value"
+                                            strokeWidth={0}
+                                        >
+                                            {allocationChartData.map((entry) => (
+                                                <Cell key={entry.name} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value: number) => [formatMoney(value, baseCurrency), '']}
+                                            contentStyle={{
+                                                borderRadius: 12,
+                                                border: 'none',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="donut-center-label">
+                                    <span className="donut-value">
+                                        {formatMoney(totalAllocationValue, baseCurrency)}
+                                    </span>
+                                    <span className="donut-sub">priced value</span>
+                                </div>
+                            </div>
+                            <div className="allocation-legend">
+                                {allocationChartData.map((item) => (
+                                    <div className="legend-item" key={item.name}>
+                                        <span className="legend-dot" style={{ backgroundColor: item.color }} />
+                                        <span className="legend-name">{item.name}</span>
+                                        <span className="legend-value">
+                                            {totalAllocationValue > 0
+                                                ? `${((item.value / totalAllocationValue) * 100).toFixed(0)}%`
+                                                : '0%'}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        <div className="allocation-legend">
-                            {allocationChartData.map((item) => (
-                                <div className="legend-item" key={item.name}>
-                                    <span className="legend-dot" style={{ backgroundColor: item.color }} />
-                                    <span className="legend-name">{item.name}</span>
-                                    <span className="legend-value">
-                                        {totalAllocationValue > 0
-                                            ? `${((item.value / totalAllocationValue) * 100).toFixed(0)}%`
-                                            : '0%'}
-                                    </span>
-                                </div>
-                            ))}
+                    ) : (
+                        <div className="holdings-empty-state">
+                            <Hexagon size={48} className="holdings-empty-icon" />
+                            <p className="holdings-empty-title">No allocation data</p>
+                            <p className="holdings-empty-text">Add holdings to see the asset allocation chart.</p>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <div className="chart-card performance-card">
                     <h2 className="chart-title">Portfolio Performance</h2>
-                    <p className="chart-subtitle">Snapshot value trend</p>
+                    <p className="chart-subtitle">
+                        {summary ? `Snapshot value trend · ${getPriceStatusLabel(dataModeLabel as PriceStatus)}` : 'Snapshot value trend'}
+                    </p>
                     <div className="performance-chart-wrapper">
                         <ResponsiveContainer width="100%" height={220}>
-                            <AreaChart data={PERFORMANCE_DATA}>
+                            <AreaChart data={displayPerformanceData}>
                                 <defs>
                                     <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#4F86F7" stopOpacity={0.3} />
@@ -284,34 +357,53 @@ export function DashboardPage() {
             <section className="bottom-row">
                 <div className="holdings-card">
                     <h2 className="section-title">Your Holdings</h2>
-                    <table className="holdings-table">
-                        <thead>
-                        <tr>
-                            <th>Symbol</th>
-                            <th>Company</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Market Value</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {HOLDINGS_DATA.map((row) => (
-                            <tr key={row.symbol}>
-                                <td className="symbol-cell">{row.symbol}</td>
-                                <td>{row.company}</td>
-                                <td>{row.qty}</td>
-                                <td>{row.price}</td>
-                                <td className="value-cell">{row.marketValue}</td>
+                    {holdings.length > 0 ? (
+                        <table className="holdings-table">
+                            <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Market Value</th>
                             </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                            {holdings.map((row) => (
+                                <tr key={row.id}>
+                                    <td className="symbol-cell">{row.ticker}</td>
+                                    <td>{row.assetType}</td>
+                                    <td>{row.quantity}</td>
+                                    <td>
+                                        {row.currentPrice != null
+                                            ? formatMoney(row.currentPrice, baseCurrency)
+                                            : formatMoney(row.averagePurchasePrice, baseCurrency)}
+                                        {row.priceStatus === 'DEMO' && (
+                                            <span className="price-status-demo"> demo</span>
+                                        )}
+                                    </td>
+                                    <td className="value-cell">
+                                        {row.marketValue != null
+                                            ? formatMoney(row.marketValue, baseCurrency)
+                                            : '—'}
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="holdings-empty-state">
+                            <Hexagon size={48} className="holdings-empty-icon" />
+                            <p className="holdings-empty-title">No holdings yet</p>
+                            <p className="holdings-empty-text">Add your first holding to see it here.</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="notes-card">
                     <h2 className="section-title">Portfolio Notes</h2>
                     <div className="notes-list">
-                        {PORTFOLIO_NOTES.map((note) => (
+                        {portfolioNotes.map((note) => (
                             <div className="note-item" key={note.title}>
                                 <Hexagon size={32} className="note-icon" />
                                 <div>

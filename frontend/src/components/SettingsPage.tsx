@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const DATA_MODES = ['Demo', 'Live', 'Cached'];
 
@@ -8,9 +8,19 @@ const MOTION_PREFS = [
     'Reduced motion: disable non-essential transitions',
 ];
 
-export function SettingsPage() {
-    const [theme, setTheme] = useState<'day' | 'night'>('day');
+interface SettingsPageProps {
+    isDark?: boolean;
+    onThemeChange?: (dark: boolean) => void;
+}
+
+export function SettingsPage({ isDark, onThemeChange }: SettingsPageProps) {
     const [dataMode, setDataMode] = useState('Demo');
+
+    const theme = isDark ? 'night' : 'day';
+
+    const handleThemeClick = (newTheme: 'day' | 'night') => {
+        onThemeChange?.(newTheme === 'night');
+    };
 
     return (
         <>
@@ -28,13 +38,13 @@ export function SettingsPage() {
                         <div className="theme-toggle-group">
                             <button
                                 className={`theme-mode-btn ${theme === 'day' ? 'active' : ''}`}
-                                onClick={() => setTheme('day')}
+                                onClick={() => handleThemeClick('day')}
                             >
                                 Day
                             </button>
                             <button
                                 className={`theme-mode-btn ${theme === 'night' ? 'active' : ''}`}
-                                onClick={() => setTheme('night')}
+                                onClick={() => handleThemeClick('night')}
                             >
                                 Night
                             </button>

@@ -14,13 +14,23 @@ export interface HoldingResponse {
   id: number;
   assetType: AssetType;
   ticker: string;
+  exchangeCode: string | null;
+  displayName: string | null;
+  provider: string | null;
+  providerQuoteId: string | null;
+  currency: string | null;
   quantity: number;
   averagePurchasePrice: number;
-  currentPrice?: number;
-  marketValue?: number;
-  unrealizedGainLoss?: number;
-  allocationPercent?: number;
+  currentPrice: number | null;
+  marketValue: number | null;
+  costBasis: number | null;
+  unrealizedGainLoss: number | null;
+  unrealizedGainLossPercent: number | null;
+  allocationPercent: number | null;
   priceStatus: PriceStatus;
+  priceObservedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface AllocationResponse {
@@ -65,7 +75,7 @@ export interface FundLookthroughResponse {
   fundInstrumentId: number;
   ticker: string;
   displayName: string;
-  assetType: 'ETF' | 'MUTUAL_FUND';
+  assetType: AssetType;
   asOfDate: string;
   source: string;
   coveragePercent: number;
