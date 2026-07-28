@@ -20,9 +20,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.holdhive.portfolio.domain.AssetType;
+import com.holdhive.pricing.application.PriceMode;
 
 class GlobalExceptionHandlerTest {
 
@@ -71,6 +75,43 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void returnsFieldErrorsForMissingRequestParameter() throws Exception {
+        mockMvc.perform(get("/test/required-param"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.message").value("Request validation failed"))
+            .andExpect(jsonPath("$.fieldErrors[0].field").value("providerQuoteIds"))
+            .andExpect(jsonPath("$.traceId", notNullValue()));
+    }
+
+    @Test
+    void returnsFieldErrorsForInvalidRequestParameterEnum() throws Exception {
+        mockMvc.perform(get("/test/price-mode")
+                .param("priceMode", "NOT_A_MODE"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.message").value("Request validation failed"))
+            .andExpect(jsonPath("$.fieldErrors[0].field").value("priceMode"))
+            .andExpect(jsonPath("$.traceId", notNullValue()));
+    }
+
+    @Test
+    void returnsFieldErrorsForInvalidRequestBodyEnum() throws Exception {
+        mockMvc.perform(post("/test/asset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "assetType": "NOT_A_TYPE"
+                    }
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.message").value("Request validation failed"))
+            .andExpect(jsonPath("$.fieldErrors[0].field").value("assetType"))
+            .andExpect(jsonPath("$.traceId", notNullValue()));
+    }
+
+    @Test
     void returnsConfiguredErrorCodeForApiException() throws Exception {
         mockMvc.perform(get("/test/not-found"))
             .andExpect(status().isNotFound())
@@ -93,8 +134,23 @@ class GlobalExceptionHandlerTest {
         void notFound() {
             throw new ApiException(HttpStatus.NOT_FOUND, "HOLDING_NOT_FOUND", "Holding not found");
         }
+
+        @GetMapping("/required-param")
+        void requiredParam(@RequestParam String providerQuoteIds) {
+        }
+
+        @GetMapping("/price-mode")
+        void priceMode(@RequestParam PriceMode priceMode) {
+        }
+
+        @PostMapping("/asset")
+        void asset(@RequestBody AssetRequest request) {
+        }
     }
 
     record SampleRequest(@Positive BigDecimal quantity) {
+    }
+
+    record AssetRequest(AssetType assetType) {
     }
 }
