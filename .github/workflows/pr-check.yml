@@ -27,6 +27,66 @@ jobs:
       - name: Verify backend
         run: ./mvnw -B verify
 
+  backend-mysql-smoke:
+    name: backend mysql smoke
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: holdhive
+          MYSQL_USER: holdhive
+          MYSQL_PASSWORD: holdhive
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Package backend
+        run: ./mvnw -B -DskipTests package
+      - name: Start backend against MySQL and smoke API
+        env:
+          BACKEND_PORT: 18080
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: holdhive
+          DB_USER: holdhive
+          DB_PASSWORD: holdhive
+          HOLDHIVE_MARKET_EXTERNAL_ENABLED: 'false'
+        run: |
+          ./mvnw -q spring-boot:run -Dspring-boot.run.profiles=local > app.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" || true' EXIT
+          for i in $(seq 1 60); do
+            if curl -fsS "http://localhost:${BACKEND_PORT}/api/v1/health" >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$APP_PID" >/dev/null 2>&1; then
+              tail -n 200 app.log
+              exit 1
+            fi
+            sleep 1
+          done
+          curl -fsS "http://localhost:${BACKEND_PORT}/api/v1/health"
+          curl -fsS "http://localhost:${BACKEND_PORT}/api/v1/market/search?query=AAPL"
+          curl -fsS -X POST "http://localhost:${BACKEND_PORT}/api/v1/holdings" \
+            -H "Content-Type: application/json" \
+            -d '{"assetType":"CASH","ticker":"USD","quantity":1000,"averagePurchasePrice":1}'
+          curl -fsS "http://localhost:${BACKEND_PORT}/api/v1/portfolio/summary"
+
   frontend:
     name: frontend
     runs-on: ubuntu-latest

@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 import com.holdhive.pricing.domain.MarketQuote;
 
-public class DemoPricingAdapter implements PricingAdapter {
+public class DemoPricingAdapter implements MarketQuoteProvider {
 
     private static final int SCALE = 8;
     private final Map<String, BigDecimal> demoPrices;

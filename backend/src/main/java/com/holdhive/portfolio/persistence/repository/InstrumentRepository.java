@@ -14,4 +14,6 @@ public interface InstrumentRepository extends JpaRepository<InstrumentEntity, Lo
         String ticker,
         String exchangeCode
     );
+
+    Optional<InstrumentEntity> findFirstByProviderQuoteIdIgnoreCase(String providerQuoteId);
 }

@@ -2,46 +2,65 @@ package com.holdhive.pricing.application;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.holdhive.portfolio.domain.AssetType;
+import com.holdhive.pricing.infrastructure.DemoMarketSearchProvider;
+import com.holdhive.pricing.infrastructure.MarketSearchProvider;
 
 @Service
 public class MarketSearchQueryService {
 
-    private static final String SOURCE = "DEMO";
     private static final int RESULT_LIMIT = 10;
-    private static final List<MarketSearchItem> DEMO_CATALOG = List.of(
-        new MarketSearchItem("AAPL", "Apple Inc.", "NASDAQ", "EASTMONEY", "105.AAPL", AssetType.STOCK),
-        new MarketSearchItem("MSFT", "Microsoft Corp.", "NASDAQ", "EASTMONEY", "105.MSFT", AssetType.STOCK),
-        new MarketSearchItem("600519", "Kweichow Moutai Co., Ltd.", "SH", "EASTMONEY", "1.600519", AssetType.STOCK),
-        new MarketSearchItem("000001", "Ping An Bank Co., Ltd.", "SZ", "EASTMONEY", "0.000001", AssetType.STOCK),
-        new MarketSearchItem("VOO", "Vanguard S&P 500 ETF", "NYSE", "EASTMONEY", "105.VOO", AssetType.ETF),
-        new MarketSearchItem("SPY", "SPDR S&P 500 ETF Trust", "NYSE", "DEMO", "105.SPY", AssetType.ETF),
-        new MarketSearchItem("QQQ", "Invesco QQQ Trust", "NASDAQ", "DEMO", "105.QQQ", AssetType.ETF),
-        new MarketSearchItem("FXAIX", "Fidelity 500 Index Fund", "FUND", "DEMO", "MF:FXAIX", AssetType.MUTUAL_FUND),
-        new MarketSearchItem("BTC", "Bitcoin", "CRYPTO", "DEMO", "CRYPTO:BTC", AssetType.CRYPTO),
-        new MarketSearchItem("ETH", "Ethereum", "CRYPTO", "DEMO", "CRYPTO:ETH", AssetType.CRYPTO),
-        new MarketSearchItem("USD", "US Dollar Cash", "CASH", "FIXED", null, AssetType.CASH),
-        new MarketSearchItem("USD_DEPOSIT", "USD Bank Deposit", "BANK", "FIXED", null, AssetType.BANK_DEPOSIT)
-    );
+    private final List<MarketSearchProvider> searchProviders;
+
+    public MarketSearchQueryService() {
+        this(List.of(new DemoMarketSearchProvider()));
+    }
+
+    @Autowired
+    public MarketSearchQueryService(List<MarketSearchProvider> searchProviders) {
+        this.searchProviders = searchProviders == null || searchProviders.isEmpty()
+            ? List.of(new DemoMarketSearchProvider())
+            : List.copyOf(searchProviders);
+    }
 
     public MarketSearchResult search(String query, String market) {
         String displayQuery = trim(query);
         String normalizedQuery = normalize(displayQuery);
         String normalizedMarket = normalize(market);
         if (normalizedQuery.isEmpty()) {
-            return new MarketSearchResult("", List.of(), SOURCE, false);
+            return new MarketSearchResult("", List.of(), "DEMO", false);
         }
 
-        List<MarketSearchItem> results = DEMO_CATALOG.stream()
+        List<MarketSearchItem> results = searchProviders.stream()
+            .flatMap(provider -> safeSearch(provider, displayQuery).stream())
             .filter(item -> matchesQuery(item, normalizedQuery))
             .filter(item -> matchesMarket(item, normalizedMarket))
+            .collect(Collectors.toMap(
+                MarketSearchQueryService::dedupeKey,
+                Function.identity(),
+                (first, ignored) -> first,
+                java.util.LinkedHashMap::new
+            ))
+            .values()
+            .stream()
             .limit(RESULT_LIMIT)
             .toList();
 
-        return new MarketSearchResult(displayQuery, results, SOURCE, false);
+        String source = searchProviders.size() == 1 ? searchProviders.getFirst().source() : "MIXED";
+        return new MarketSearchResult(displayQuery, results, source, false);
+    }
+
+    private static List<MarketSearchItem> safeSearch(MarketSearchProvider provider, String query) {
+        try {
+            return provider.search(query);
+        } catch (RuntimeException exception) {
+            return List.of();
+        }
     }
 
     private static boolean matchesQuery(MarketSearchItem item, String query) {
@@ -72,4 +91,12 @@ public class MarketSearchQueryService {
     private static String trim(String value) {
         return value == null ? "" : value.trim();
     }
+
+    private static String dedupeKey(MarketSearchItem item) {
+        if (item.providerQuoteId() != null && !item.providerQuoteId().isBlank()) {
+            return normalize(item.providerQuoteId());
+        }
+        return normalize(item.assetType() + ":" + item.exchangeCode() + ":" + item.ticker());
+    }
+
 }

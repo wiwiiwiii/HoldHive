@@ -55,6 +55,7 @@ class JpaPortfolioHoldingReader implements PortfolioHoldingReader {
         InstrumentEntity instrument = holding.getInstrument();
         return new HoldingPosition(
             holding.getId(),
+            instrument.getId(),
             instrument.getAssetType(),
             instrument.getTicker(),
             instrument.getProviderQuoteId(),

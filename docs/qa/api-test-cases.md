@@ -13,6 +13,8 @@ BACKEND_PORT=8080 ./mvnw spring-boot:run \
   -Dspring-boot.run.useTestClasspath=true
 ```
 
+The test profile disables external market calls for deterministic local checks. To manually try live EastMoney/CoinGecko quotes, start the backend with `local` profile and keep `HOLDHIVE_MARKET_EXTERNAL_ENABLED=true` or omit the variable.
+
 ## Health
 
 ### GET /api/v1/health
@@ -58,7 +60,7 @@ curl "http://localhost:8080/api/v1/market/search?query=600&market=SH"
 
 - `query` is required and matched against ticker, display name, or provider quote id.
 - `market` is optional. Current demo values include `US`, `CN`, `SH`, `SZ`, `NASDAQ`, `NYSE`, `FUND`, `CRYPTO`, `CASH`, and `BANK`.
-- Current implementation returns demo search data with `source: DEMO`; real provider integration can replace the catalog behind the same response contract.
+- Backend can combine EastMoney live search results with the local demo catalog. When external market calls are disabled, demo results still keep the same response contract.
 
 Expected `200 OK`:
 
@@ -98,11 +100,16 @@ curl "http://localhost:8080/api/v1/market/quotes?providerQuoteIds=AAPL,105.MSFT,
 ```
 
 - `providerQuoteIds` is required, comma-separated, whitespace around ids is trimmed.
-- `priceMode` optional, default `BEST_AVAILABLE`. In the current demo adapter, use `DEMO_ALLOWED` when checking demo quote ids.
+- `priceMode` optional, default `BEST_AVAILABLE`.
+- Price lookup order is live external quote -> fresh `price_snapshot` cache -> demo quote -> unavailable.
+- In deterministic local tests using the H2 test profile, use `DEMO_ALLOWED` when checking demo quote ids.
 
 Cases to check:
 - [ ] Missing `providerQuoteIds` -> `400 Bad Request`, `code: VALIDATION_FAILED`
 - [ ] Known demo id with `DEMO_ALLOWED` -> appears in `quotes`
+- [ ] Known EastMoney id with external market enabled and `BEST_AVAILABLE` -> appears with `priceStatus: LIVE`
+- [ ] Known crypto id `CRYPTO:BTC` with external market enabled and `BEST_AVAILABLE` -> appears with `provider: COINGECKO`, `priceStatus: LIVE`
+- [ ] External provider unavailable but fresh DB snapshot exists -> appears with `priceStatus: CACHED`
 - [ ] Unknown/unavailable id -> appears in `unavailable`, not in `quotes`
 - [ ] Mixed known + unknown ids in one request -> split correctly between `quotes` and `unavailable`
 
@@ -142,8 +149,58 @@ Expected `200 OK`:
 Cases to check:
 - [ ] Valid ETF id `102` -> `200 OK` with `holdings` populated
 - [ ] Valid mutual fund id `103` -> `200 OK` with `holdings` populated
+- [ ] Existing DB instrument whose ticker is `VOO` or `FXAIX` -> `200 OK` with that instrument id and populated demo holdings
+- [ ] Existing DB fund instrument with unknown ticker -> `200 OK`, empty `holdings`, `source: DISCLOSURE_UNAVAILABLE`, warning explains missing disclosure
 - [ ] `coveragePercent` < 100 -> `warnings` explains partial coverage
 - [ ] Non-existent `instrumentId` -> `404 Not Found`, `code: FUND_LOOKTHROUGH_NOT_FOUND`
+
+## Portfolio Exposure
+
+### GET /api/v1/portfolio/exposure
+
+```bash
+curl "http://localhost:8080/api/v1/portfolio/exposure"
+curl "http://localhost:8080/api/v1/portfolio/exposure?lookthrough=true&priceMode=DEMO_ALLOWED"
+```
+
+- `lookthrough=false` returns direct holdings as exposure items.
+- `lookthrough=true` decomposes known ETF/mutual-fund holdings into disclosed stock components and an `_UNDISCLOSED` residual item.
+- `priceMode` follows the same rules as holdings and summary.
+
+Expected `200 OK` shape:
+
+```json
+{
+  "portfolioId": 1,
+  "portfolioName": "My Portfolio",
+  "baseCurrency": "USD",
+  "lookthrough": true,
+  "priceMode": "DEMO_ALLOWED",
+  "totalMarketValue": 2500.00000000,
+  "items": [
+    {
+      "ticker": "AAPL",
+      "displayName": "Apple Inc.",
+      "assetType": "STOCK",
+      "directMarketValue": 1500.00000000,
+      "fundLookthroughMarketValue": 100.00000000,
+      "totalExposureValue": 1600.00000000,
+      "exposurePercent": 64.00000000,
+      "sources": ["DIRECT", "FUND:VOO"]
+    }
+  ],
+  "warnings": [
+    "AAPL appears both as direct holding and inside fund holdings."
+  ]
+}
+```
+
+Cases to check:
+
+- [ ] Empty portfolio -> `items: []`, `totalMarketValue: 0`
+- [ ] Direct stock + fund containing the same stock -> warning mentions overlap
+- [ ] Fund coverage below 100% -> `_UNDISCLOSED` residual item appears
+- [ ] Unpriced holding -> excluded from exposure with warning
 
 ## Holding CRUD
 

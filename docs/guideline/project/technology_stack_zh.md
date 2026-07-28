@@ -17,7 +17,7 @@ HoldHive 采用前后端分离的模块化单体架构。目标不是追求最�
 | 数字动画 | react-countup 或轻量自定义 hook | 总市值、盈亏和持仓数变化 |
 | 后端语言 | Java 21 LTS | REST API 与业务逻辑 |
 | 后端框架 | Spring Boot 3.x | Web、校验、数据访问和配置 |
-| 实时价格源 | 东方财富公共接口；Tiingo/Finnhub 为股票/ETF 备选；CoinGecko/Binance/Coinbase 为加密资产 P1 备选 | 股票、ETF、加密资产和现金估值 |
+| 实时价格源 | 东方财富公共接口；CoinGecko Simple Price；Tiingo/Finnhub 为股票/ETF 备选；Binance/Coinbase 为加密资产后备 | 股票、ETF、加密资产和现金估值 |
 | 构建工具 | Maven 3.9+ | 依赖、测试和打包 |
 | 数据库 | MySQL 8.4 LTS | 持仓、证券和价格快照 |
 | 数据访问 | Spring Data JPA / Hibernate | Repository 与实体映射 |
@@ -295,7 +295,7 @@ cd backend
 - 摘要组件正确展示完整、部分和空估值。
 - 添加表单拒绝非法 assetType、空 ticker、非正数量和负成本。
 - 现金类型显示固定估值提示，不调用外部行情。
-- 加密资产显示 demo/cache 标签，不把演示价格伪装为实时价格。
+- 加密资产显示 live/cache/demo 标签，不把缓存或演示价格伪装为实时价格。
 - 提交中按钮禁用，失败后保留输入。
 - 删除前显示确认，取消不调用 API，确认成功后刷新。
 - 价格状态为 `DEMO` 或 `UNAVAILABLE` 时出现明确标签。

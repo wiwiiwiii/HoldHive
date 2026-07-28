@@ -35,6 +35,9 @@ public class PriceSnapshotEntity {
     @Column(nullable = false, length = 64)
     private String provider;
 
+    @Column(nullable = false, length = 32)
+    private String status = "LIVE";
+
     @Column(name = "is_demo", nullable = false)
     private boolean demo;
 
@@ -86,6 +89,10 @@ public class PriceSnapshotEntity {
 
     public String getProvider() {
         return provider;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     public boolean isDemo() {
