@@ -84,7 +84,7 @@ jobs:
           curl -fsS "http://localhost:${BACKEND_PORT}/api/v1/market/search?query=AAPL"
           curl -fsS -X POST "http://localhost:${BACKEND_PORT}/api/v1/holdings" \
             -H "Content-Type: application/json" \
-            -d '{"assetType":"CASH","ticker":"USD","quantity":1000,"averagePurchasePrice":1}'
+            -d '{"assetType":"CASH","ticker":"CI_CASH_SMOKE","quantity":1000,"averagePurchasePrice":1}'
           curl -fsS "http://localhost:${BACKEND_PORT}/api/v1/portfolio/summary"
 
   frontend:
