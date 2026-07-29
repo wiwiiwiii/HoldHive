@@ -10,6 +10,10 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import com.holdhive.portfolio.persistence.entity.InstrumentEntity;
 import com.holdhive.portfolio.persistence.entity.PriceSnapshotEntity;
 import com.holdhive.portfolio.persistence.repository.InstrumentRepository;
@@ -19,6 +23,7 @@ import com.holdhive.pricing.domain.PriceStatus;
 
 public class CachedPricingAdapter implements PricingAdapter {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CachedPricingAdapter.class);
     private static final int SCALE = 8;
 
     private final MarketQuoteProvider liveProvider;
@@ -159,15 +164,23 @@ public class CachedPricingAdapter implements PricingAdapter {
         if (quote == null || quote.currentPrice() == null || quote.priceStatus() != PriceStatus.LIVE) {
             return;
         }
-        instrumentRepository.findFirstByProviderQuoteIdIgnoreCase(quote.providerQuoteId())
-            .ifPresent(instrument -> priceSnapshotRepository.save(new PriceSnapshotEntity(
-                instrument,
-                scale(quote.currentPrice()),
-                quote.currency(),
-                quote.provider(),
-                demo,
-                quote.priceObservedAt() == null ? clock.now() : quote.priceObservedAt()
-            )));
+        if (TransactionSynchronizationManager.isCurrentTransactionReadOnly()) {
+            LOGGER.debug("Skipping market quote snapshot write for {} inside read-only transaction", quote.providerQuoteId());
+            return;
+        }
+        try {
+            instrumentRepository.findFirstByProviderQuoteIdIgnoreCase(quote.providerQuoteId())
+                .ifPresent(instrument -> priceSnapshotRepository.save(new PriceSnapshotEntity(
+                    instrument,
+                    scale(quote.currentPrice()),
+                    quote.currency(),
+                    quote.provider(),
+                    demo,
+                    quote.priceObservedAt() == null ? clock.now() : quote.priceObservedAt()
+                )));
+        } catch (RuntimeException exception) {
+            LOGGER.debug("Skipping market quote snapshot write for {}", quote.providerQuoteId(), exception);
+        }
     }
 
     private static boolean isUsable(MarketQuote quote) {
