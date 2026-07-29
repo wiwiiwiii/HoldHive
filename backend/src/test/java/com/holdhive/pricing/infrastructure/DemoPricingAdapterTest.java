@@ -67,4 +67,27 @@ class DemoPricingAdapterTest {
         assertThat(quotes).extracting(MarketQuote::priceStatus)
             .containsExactly(PriceStatus.DEMO, PriceStatus.UNAVAILABLE, PriceStatus.DEMO);
     }
+
+    @Test
+    void supportsPortfolioDemoQuoteIdsAcrossAssetTypes() {
+        DemoPricingAdapter adapter = new DemoPricingAdapter(
+            Map.ofEntries(
+                Map.entry("105.NVDA", new BigDecimal("940.00")),
+                Map.entry("105.QQQ", new BigDecimal("485.75")),
+                Map.entry("FUND:005827", new BigDecimal("2.11")),
+                Map.entry("CRYPTO:BTC", new BigDecimal("67500.00"))
+            ),
+            OBSERVED_AT
+        );
+
+        List<MarketQuote> quotes = adapter.quotes(List.of("105.NVDA", "105.QQQ", "FUND:005827", "CRYPTO:BTC"));
+
+        assertThat(quotes).extracting(MarketQuote::currentPrice)
+            .containsExactly(
+                new BigDecimal("940.00000000"),
+                new BigDecimal("485.75000000"),
+                new BigDecimal("2.11000000"),
+                new BigDecimal("67500.00000000")
+            );
+    }
 }

@@ -35,6 +35,25 @@ class MarketSearchQueryServiceTest {
     }
 
     @Test
+    void exposesDemoCatalogItemsForSeededPortfolioAssetTypes() {
+        assertThat(service.search("nvda", "US").results())
+            .extracting(MarketSearchItem::providerQuoteId)
+            .contains("105.NVDA");
+        assertThat(service.search("005827", "FUND").results())
+            .extracting(MarketSearchItem::assetType)
+            .contains(com.holdhive.portfolio.domain.AssetType.MUTUAL_FUND);
+        assertThat(service.search("qqq", "US").results())
+            .extracting(MarketSearchItem::providerQuoteId)
+            .contains("105.QQQ");
+        assertThat(service.search("btc", "CRYPTO").results())
+            .extracting(MarketSearchItem::providerQuoteId)
+            .contains("CRYPTO:BTC");
+        assertThat(service.search("deposit", "BANK").results())
+            .extracting(MarketSearchItem::ticker)
+            .contains("USD_DEPOSIT");
+    }
+
+    @Test
     void returnsEmptyResultForBlankQuery() {
         MarketSearchResult result = service.search("   ", "US");
 

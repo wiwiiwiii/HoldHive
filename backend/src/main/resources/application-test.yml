@@ -10,5 +10,5 @@ spring:
 holdhive:
   market:
     external-enabled: false
-    cache-ttl: 60s
+    cache-ttl: 30d
     http-timeout: 2s

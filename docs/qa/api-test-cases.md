@@ -214,8 +214,19 @@ curl "http://localhost:8080/api/v1/holdings?sort=marketValue,desc&priceMode=DEMO
 Expected: `200 OK`
 
 ```json
-{ "items": [], "count": 0 }
+{
+  "items": [
+    {
+      "ticker": "005827",
+      "assetType": "MUTUAL_FUND",
+      "priceStatus": "CACHED"
+    }
+  ],
+  "count": 13
+}
 ```
+
+Fresh databases include the V4 demo portfolio seed. See `docs/qa/demo-seed-data.md` for the full list. If a test intentionally needs an empty portfolio, delete local demo holdings in a disposable database before running that case.
 
 ### GET /api/v1/holdings/{holdingId}
 

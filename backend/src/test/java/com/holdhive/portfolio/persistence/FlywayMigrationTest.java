@@ -38,8 +38,28 @@ class FlywayMigrationTest {
         assertThat(columnExists(jdbcTemplate, "price_snapshot", "provider")).isTrue();
         assertThat(columnExists(jdbcTemplate, "price_snapshot", "observed_at")).isTrue();
         assertThat(columnExists(jdbcTemplate, "price_snapshot", "is_demo")).isTrue();
-        assertThat(appliedFlywayVersions(jdbcTemplate)).containsExactly("1", "2", "3");
+        assertThat(appliedFlywayVersions(jdbcTemplate)).containsExactly("1", "2", "3", "4");
         assertThat(defaultPortfolioCount(jdbcTemplate)).isEqualTo(1);
+    }
+
+    @Test
+    void seedsDefaultPortfolioWithDemoHoldingsAcrossAllSupportedAssetTypes() {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+        Long portfolioId = jdbcTemplate.queryForObject(
+            "SELECT id FROM portfolio WHERE name = 'My Portfolio' ORDER BY id LIMIT 1",
+            Long.class
+        );
+
+        assertThat(portfolioId).isNotNull();
+        assertThat(defaultPortfolioHoldingCount(jdbcTemplate, portfolioId)).isGreaterThanOrEqualTo(12);
+        assertThat(defaultPortfolioAssetTypes(jdbcTemplate, portfolioId))
+            .contains("STOCK", "ETF", "MUTUAL_FUND", "CRYPTO", "CASH", "BANK_DEPOSIT");
+        assertThat(providerQuoteIds(jdbcTemplate, portfolioId))
+            .contains("105.AAPL", "105.MSFT", "105.VOO", "MF:FXAIX", "CRYPTO:BTC", "CRYPTO:ETH")
+            .contains("UNKNOWN:PRIVATE");
+        assertThat(latestPriceSnapshotCount(jdbcTemplate, portfolioId)).isGreaterThanOrEqualTo(8);
+        assertThat(fixedAssetAveragePurchasePrices(jdbcTemplate, portfolioId)).containsOnly("1.00000000");
     }
 
     @Test
@@ -62,10 +82,10 @@ class FlywayMigrationTest {
         );
         jdbcTemplate.update("""
             INSERT INTO instrument (ticker, display_name, exchange_code, currency, asset_type)
-            VALUES ('AAPL', 'Apple Inc.', 'NASDAQ', 'USD', 'STOCK')
+            VALUES ('FLYWAY_DUP_TEST', 'Flyway Duplicate Test', 'NASDAQ', 'USD', 'STOCK')
             """);
         Long instrumentId = jdbcTemplate.queryForObject(
-            "SELECT id FROM instrument WHERE ticker = 'AAPL'",
+            "SELECT id FROM instrument WHERE ticker = 'FLYWAY_DUP_TEST'",
             Long.class
         );
 
@@ -134,5 +154,56 @@ class FlywayMigrationTest {
               AND base_currency = 'USD'
             """, Integer.class);
         return count == null ? 0 : count;
+    }
+
+    private static int defaultPortfolioHoldingCount(JdbcTemplate jdbcTemplate, Long portfolioId) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM holding
+            WHERE portfolio_id = ?
+            """, Integer.class, portfolioId);
+        return count == null ? 0 : count;
+    }
+
+    private static String[] defaultPortfolioAssetTypes(JdbcTemplate jdbcTemplate, Long portfolioId) {
+        return jdbcTemplate.queryForList("""
+            SELECT DISTINCT i.asset_type
+            FROM holding h
+            JOIN instrument i ON i.id = h.instrument_id
+            WHERE h.portfolio_id = ?
+            ORDER BY i.asset_type
+            """, String.class, portfolioId).toArray(String[]::new);
+    }
+
+    private static String[] providerQuoteIds(JdbcTemplate jdbcTemplate, Long portfolioId) {
+        return jdbcTemplate.queryForList("""
+            SELECT i.provider_quote_id
+            FROM holding h
+            JOIN instrument i ON i.id = h.instrument_id
+            WHERE h.portfolio_id = ?
+              AND i.provider_quote_id IS NOT NULL
+            ORDER BY i.provider_quote_id
+            """, String.class, portfolioId).toArray(String[]::new);
+    }
+
+    private static int latestPriceSnapshotCount(JdbcTemplate jdbcTemplate, Long portfolioId) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM price_snapshot ps
+            JOIN holding h ON h.instrument_id = ps.instrument_id
+            WHERE h.portfolio_id = ?
+            """, Integer.class, portfolioId);
+        return count == null ? 0 : count;
+    }
+
+    private static String[] fixedAssetAveragePurchasePrices(JdbcTemplate jdbcTemplate, Long portfolioId) {
+        return jdbcTemplate.queryForList("""
+            SELECT CAST(h.average_purchase_price AS VARCHAR)
+            FROM holding h
+            JOIN instrument i ON i.id = h.instrument_id
+            WHERE h.portfolio_id = ?
+              AND i.asset_type IN ('CASH', 'BANK_DEPOSIT')
+            ORDER BY i.asset_type
+            """, String.class, portfolioId).toArray(String[]::new);
     }
 }
