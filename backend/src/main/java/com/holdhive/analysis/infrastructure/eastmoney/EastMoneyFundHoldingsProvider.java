@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -88,13 +89,23 @@ public class EastMoneyFundHoldingsProvider implements FundHoldingsLookup {
         return fresh;
     }
 
+    /**
+     * Runs the position and name lookups concurrently instead of sequentially -
+     * they are independent calls, so serializing them only doubles latency for
+     * no benefit. The name lookup result is only consumed if the position call
+     * succeeds and parses.
+     */
     private Optional<FundHoldingSnapshot> fetch(String code) {
-        String body = getUtf8(properties.baseUrl() + String.format(POSITION_PATH, code));
+        CompletableFuture<String> positionFuture = CompletableFuture.supplyAsync(
+                () -> getUtf8(properties.baseUrl() + String.format(POSITION_PATH, code)));
+        CompletableFuture<String> nameFuture = CompletableFuture.supplyAsync(() -> resolveFundName(code));
+
+        String body = positionFuture.join();
         if (body == null) {
             return Optional.empty();
         }
         return parse(code, body)
-                .map(s -> new FundHoldingSnapshot(s.fundTicker(), resolveFundName(code), s.asOfQuarter(),
+                .map(s -> new FundHoldingSnapshot(s.fundTicker(), nameFuture.join(), s.asOfQuarter(),
                         s.constituents()));
     }
 

@@ -1,8 +1,13 @@
 package com.holdhive.analysis.application;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +32,8 @@ import com.holdhive.analysis.domain.ProfitLossCalculator.ProfitLossResult;
 import com.holdhive.analysis.domain.SectorExposureCalculator;
 import com.holdhive.analysis.domain.SectorExposureCalculator.SectorExposureResult;
 import com.holdhive.analysis.domain.SectorLookup;
+import com.holdhive.analysis.domain.model.AssetType;
+import com.holdhive.analysis.domain.model.FundHoldingSnapshot;
 import com.holdhive.analysis.domain.model.HoldingFact;
 import com.holdhive.analysis.infrastructure.llm.DeepSeekClient;
 
@@ -120,11 +127,18 @@ public class PortfolioAnalysisService {
                 .map(this::toFact)
                 .toList();
 
+        // Fetch every distinct FUND holding's snapshot exactly once, in parallel,
+        // instead of letting each of the three fund-aware calculators below call
+        // fundHoldingsLookup.find() independently (previously relying on
+        // fundHoldingsLookup's own cache being incidentally warmed by whichever
+        // calculator happened to run first).
+        FundHoldingsLookup prefetchedFundLookup = prefetchFundHoldings(facts);
+
         OverviewResult overview = overviewCalculator.calculate(facts);
         ConcentrationResult concentration = concentrationCalculator.calculate(facts);
-        FundOverlapResult fundOverlap = fundOverlapCalculator.calculate(facts, fundHoldingsLookup);
-        LookThroughResult lookThrough = lookThroughCalculator.calculate(facts, fundHoldingsLookup);
-        SectorExposureResult sectorExposure = sectorExposureCalculator.calculate(facts, sectorLookup, fundHoldingsLookup);
+        FundOverlapResult fundOverlap = fundOverlapCalculator.calculate(facts, prefetchedFundLookup);
+        LookThroughResult lookThrough = lookThroughCalculator.calculate(facts, prefetchedFundLookup);
+        SectorExposureResult sectorExposure = sectorExposureCalculator.calculate(facts, sectorLookup, prefetchedFundLookup);
         ProfitLossResult profitLoss = profitLossCalculator.calculate(facts);
 
         String userPrompt = buildUserPrompt(request, overview, concentration, fundOverlap, lookThrough, sectorExposure, profitLoss);
@@ -139,6 +153,53 @@ public class PortfolioAnalysisService {
 
     private HoldingFact toFact(HoldingInput input) {
         return new HoldingFact(input.ticker(), input.assetType(), input.quantity(), input.marketValue(), input.costBasis());
+    }
+
+    /**
+     * Fetches every distinct FUND holding's snapshot exactly once per request,
+     * fanning the calls out across virtual threads so that a live lookup
+     * implementation (e.g. the EastMoney provider, which is network-backed)
+     * pays its latency once and in parallel rather than once per calculator.
+     * Returns a lookup backed purely by the resulting in-memory map so
+     * {@link FundOverlapCalculator}, {@link LookThroughCalculator} and
+     * {@link SectorExposureCalculator} see identical, already-resolved data
+     * regardless of call order.
+     */
+    private FundHoldingsLookup prefetchFundHoldings(List<HoldingFact> facts) {
+        List<String> fundTickers = facts.stream()
+                .filter(f -> f.assetType() == AssetType.FUND)
+                .map(HoldingFact::ticker)
+                .distinct()
+                .toList();
+
+        if (fundTickers.isEmpty()) {
+            return ticker -> Optional.empty();
+        }
+
+        Map<String, Optional<FundHoldingSnapshot>> snapshots = new HashMap<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            Map<String, Future<Optional<FundHoldingSnapshot>>> pending = new LinkedHashMap<>();
+            for (String ticker : fundTickers) {
+                pending.put(ticker, executor.submit(() -> fundHoldingsLookup.find(ticker)));
+            }
+            for (Map.Entry<String, Future<Optional<FundHoldingSnapshot>>> entry : pending.entrySet()) {
+                snapshots.put(entry.getKey(), awaitFundLookup(entry.getKey(), entry.getValue()));
+            }
+        }
+        return ticker -> snapshots.getOrDefault(ticker, Optional.empty());
+    }
+
+    private Optional<FundHoldingSnapshot> awaitFundLookup(String ticker, Future<Optional<FundHoldingSnapshot>> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Fund holdings prefetch interrupted for {}", ticker);
+            return Optional.empty();
+        } catch (ExecutionException e) {
+            log.warn("Fund holdings prefetch failed for {}: {}", ticker, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+            return Optional.empty();
+        }
     }
 
     private String buildUserPrompt(
