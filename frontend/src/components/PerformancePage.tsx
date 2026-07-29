@@ -94,7 +94,7 @@ export function PerformancePage() {
     }, [holdings]);
 
     return (
-        <>
+        <div className="performance-page-wrapper">
             <section className="performance-page-section">
                 <div className="performance-chart-card">
                     <h2 className="performance-chart-title">Portfolio Value Trend</h2>
@@ -106,17 +106,17 @@ export function PerformancePage() {
                             <AreaChart data={DEMO_PERFORMANCE_DATA}>
                                 <defs>
                                     <linearGradient id="perfTrendGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#4F86F7" stopOpacity={0.25} />
-                                        <stop offset="100%" stopColor="#4F86F7" stopOpacity={0} />
+                                        <stop offset="0%" stopColor="#4F86F7" stopOpacity={0.25}/>
+                                        <stop offset="100%" stopColor="#4F86F7" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
                                 <XAxis
                                     dataKey="date"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fontSize: 12, fill: '#8a94a6' }}
+                                    tick={{fontSize: 12, fill: '#8a94a6'}}
                                 />
-                                <YAxis hide domain={['dataMin - 500', 'dataMax + 500']} />
+                                <YAxis hide domain={['dataMin - 500', 'dataMax + 500']}/>
                                 <Tooltip
                                     formatter={(value: number) => [`$${value.toLocaleString()}`, 'Value']}
                                     contentStyle={{
@@ -131,7 +131,7 @@ export function PerformancePage() {
                                     stroke="#4F86F7"
                                     strokeWidth={2.5}
                                     fill="url(#perfTrendGradient)"
-                                    dot={{ r: 4, fill: '#fff', stroke: '#4F86F7', strokeWidth: 2 }}
+                                    dot={{r: 4, fill: '#fff', stroke: '#4F86F7', strokeWidth: 2}}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -143,11 +143,11 @@ export function PerformancePage() {
                 {insightCards.map((card) => (
                     <div className="performance-insight-card" key={card.label}>
                         <p className="insight-label">{card.label}</p>
-                        <p className="insight-value" style={{ color: card.color }}>{card.value}</p>
+                        <p className="insight-value" style={{color: card.color}}>{card.value}</p>
                         <p className="insight-detail">{card.detail}</p>
                     </div>
                 ))}
             </section>
-        </>
+        </div>
     );
 }

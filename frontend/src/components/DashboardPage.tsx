@@ -220,10 +220,10 @@ export function DashboardPage() {
     const displayPerformanceData = DEMO_PERFORMANCE_DATA;
 
     return (
-        <>
+        <div className="dashboard-page-wrapper">
             {error && (
                 <div className="metric-cards-row">
-                    <div className="metric-card" style={{ borderColor: '#e74c3c' }}>
+                    <div className="metric-card" style={{borderColor: '#e74c3c'}}>
                         <p className="metric-detail negative" role="alert">{error}</p>
                     </div>
                 </div>
@@ -233,7 +233,7 @@ export function DashboardPage() {
                 {metricCards.map((card) => (
                     <div className="metric-card" key={card.label}>
                         <div className="metric-header">
-                            <Hexagon size={20} className="metric-icon" />
+                            <Hexagon size={20} className="metric-icon"/>
                             <span className="metric-label">{card.label}</span>
                         </div>
                         <p className="metric-value">{isLoading && !summary ? '—' : card.value}</p>
@@ -268,7 +268,7 @@ export function DashboardPage() {
                                             strokeWidth={0}
                                         >
                                             {allocationChartData.map((entry) => (
-                                                <Cell key={entry.name} fill={entry.color} />
+                                                <Cell key={entry.name} fill={entry.color}/>
                                             ))}
                                         </Pie>
                                         <Tooltip
@@ -291,7 +291,7 @@ export function DashboardPage() {
                             <div className="allocation-legend">
                                 {allocationChartData.map((item) => (
                                     <div className="legend-item" key={item.name}>
-                                        <span className="legend-dot" style={{ backgroundColor: item.color }} />
+                                        <span className="legend-dot" style={{backgroundColor: item.color}}/>
                                         <span className="legend-name">{item.name}</span>
                                         <span className="legend-value">
                                             {totalAllocationValue > 0
@@ -304,7 +304,7 @@ export function DashboardPage() {
                         </div>
                     ) : (
                         <div className="holdings-empty-state">
-                            <Hexagon size={48} className="holdings-empty-icon" />
+                            <Hexagon size={48} className="holdings-empty-icon"/>
                             <p className="holdings-empty-title">No allocation data</p>
                             <p className="holdings-empty-text">Add holdings to see the asset allocation chart.</p>
                         </div>
@@ -321,17 +321,17 @@ export function DashboardPage() {
                             <AreaChart data={displayPerformanceData}>
                                 <defs>
                                     <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#4F86F7" stopOpacity={0.3} />
-                                        <stop offset="100%" stopColor="#4F86F7" stopOpacity={0} />
+                                        <stop offset="0%" stopColor="#4F86F7" stopOpacity={0.3}/>
+                                        <stop offset="100%" stopColor="#4F86F7" stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
                                 <XAxis
                                     dataKey="date"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fontSize: 12, fill: '#8a94a6' }}
+                                    tick={{fontSize: 12, fill: '#8a94a6'}}
                                 />
-                                <YAxis hide domain={['dataMin - 500', 'dataMax + 500']} />
+                                <YAxis hide domain={['dataMin - 500', 'dataMax + 500']}/>
                                 <Tooltip
                                     formatter={(value: number) => [`$${value.toLocaleString()}`, 'Value']}
                                     contentStyle={{
@@ -346,7 +346,7 @@ export function DashboardPage() {
                                     stroke="#4F86F7"
                                     strokeWidth={2.5}
                                     fill="url(#perfGradient)"
-                                    dot={{ r: 4, fill: '#fff', stroke: '#4F86F7', strokeWidth: 2 }}
+                                    dot={{r: 4, fill: '#fff', stroke: '#4F86F7', strokeWidth: 2}}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -393,7 +393,7 @@ export function DashboardPage() {
                         </table>
                     ) : (
                         <div className="holdings-empty-state">
-                            <Hexagon size={48} className="holdings-empty-icon" />
+                            <Hexagon size={48} className="holdings-empty-icon"/>
                             <p className="holdings-empty-title">No holdings yet</p>
                             <p className="holdings-empty-text">Add your first holding to see it here.</p>
                         </div>
@@ -405,7 +405,7 @@ export function DashboardPage() {
                     <div className="notes-list">
                         {portfolioNotes.map((note) => (
                             <div className="note-item" key={note.title}>
-                                <Hexagon size={32} className="note-icon" />
+                                <Hexagon size={32} className="note-icon"/>
                                 <div>
                                     <p className="note-title">{note.title}</p>
                                     <p className="note-detail">{note.detail}</p>
@@ -415,7 +415,7 @@ export function DashboardPage() {
                     </div>
 
                     {fundLookthrough && (
-                        <div style={{ marginTop: 16 }}>
+                        <div style={{marginTop: 16}}>
                             <h2 className="section-title">Fund Look-through</h2>
                             <p className="note-detail">
                                 {fundLookthrough.ticker} — {formatPercent(fundLookthrough.coveragePercent)} covered
@@ -434,18 +434,18 @@ export function DashboardPage() {
                         </div>
                     )}
 
-                    <div style={{ marginTop: 12 }}>
+                    <div style={{marginTop: 12}}>
                         <button
                             className="theme-toggle"
                             onClick={() => void refreshSummary()}
-                            style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+                            style={{fontSize: '0.82rem', padding: '8px 14px'}}
                         >
-                            <RefreshCw size={14} className={isLoading ? 'spin-icon' : undefined} />
+                            <RefreshCw size={14} className={isLoading ? 'spin-icon' : undefined}/>
                             {isLoading ? 'Refreshing' : 'Refresh'}
                         </button>
                     </div>
                 </div>
             </section>
-        </>
+        </div>
     );
 }
