@@ -141,6 +141,7 @@ public class HoldingQueryService {
 
         return new PendingHoldingView(
             holding.getId(),
+            instrument.getId(),
             instrument.getTicker(),
             instrument.getExchangeCode(),
             instrument.getDisplayName(),
@@ -253,6 +254,7 @@ public class HoldingQueryService {
 
     private record PendingHoldingView(
         Long id,
+        Long instrumentId,
         String ticker,
         String exchangeCode,
         String displayName,
@@ -278,6 +280,7 @@ public class HoldingQueryService {
                 : percentageOrNull(marketValue, totalMarketValue);
             return new HoldingView(
                 id,
+                instrumentId,
                 ticker,
                 exchangeCode,
                 displayName,

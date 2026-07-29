@@ -32,6 +32,7 @@ GET /api/v1/funds/{instrumentId}/lookthrough
 ```
 
 - Call when a user selects or opens an `ETF` / `MUTUAL_FUND`.
+- Use `HoldingResponse.instrumentId` from `/api/v1/holdings`, not `HoldingResponse.id`, when opening lookthrough for an existing holding.
 - Show a hint that fund holdings may overlap with direct stock holdings.
 - If `holdings` is empty and warnings exist, display the warning instead of treating it as a hard error.
 
