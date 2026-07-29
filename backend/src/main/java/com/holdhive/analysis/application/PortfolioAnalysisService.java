@@ -212,7 +212,22 @@ public class PortfolioAnalysisService {
             Runnable onComplete,
             Consumer<Throwable> onError) {
         PortfolioAnalysisFacts facts = computeFacts(holdings);
-        String userPrompt = buildUserPrompt(baseCurrency, holdings, facts);
+        streamNarrative(baseCurrency, holdings, facts, onToken, onComplete, onError);
+    }
+
+    /**
+     * Streaming variant that accepts externally computed facts, avoiding a
+     * redundant {@link #computeFacts} call when the caller has already computed
+     * them (e.g. the combined {@code /insights/full} endpoint).
+     */
+    public void streamNarrative(
+            String baseCurrency,
+            List<HoldingFact> holdings,
+            PortfolioAnalysisFacts precomputedFacts,
+            Consumer<String> onToken,
+            Runnable onComplete,
+            Consumer<Throwable> onError) {
+        String userPrompt = buildUserPrompt(baseCurrency, holdings, precomputedFacts);
         deepSeekClient.streamNarrative(STREAM_SYSTEM_PROMPT, userPrompt, onToken, onComplete, onError);
     }
 
