@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trash2, Hexagon } from 'lucide-react';
+import { Trash2, Hexagon, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { fetchHoldingsFull, deleteHolding } from '../api/portfolioApi';
-import type { HoldingResponse } from '../api/types';
+import { fetchHoldingsFull, deleteHolding, updateHolding } from '../api/portfolioApi';
+import type { HoldingResponse, PriceMode } from '../api/types';
 
 const FILTERS = ['All', 'Priced', 'Unpriced', 'High gain'];
 
@@ -34,10 +34,23 @@ function formatMoney(value: number): string {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function getPriceStatusLabel(status: string): string {
+    switch (status) {
+        case 'LIVE': return 'Live';
+        case 'CACHED': return 'Cached';
+        case 'DEMO': return 'Demo';
+        case 'FIXED': return 'Fixed';
+        case 'UNAVAILABLE': return 'Unavailable';
+        default: return 'Unknown';
+    }
+}
+
 interface HoldingsPageProps {
     isDark?: boolean;
     refreshTrigger?: number;
 }
+
+const PRICE_MODE: PriceMode = 'DEMO_ALLOWED';
 
 export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
     const [activeFilter, setActiveFilter] = useState('All');
@@ -46,38 +59,86 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
     const [error, setError] = useState<string | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
+    const [editTarget, setEditTarget] = useState<HoldingRow | null>(null);
+    const [editQuantity, setEditQuantity] = useState('');
+    const [editPrice, setEditPrice] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const loadHoldings = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await fetchHoldingsFull(PRICE_MODE);
+            setHoldings(buildHoldingRows(data));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load holdings.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         let cancelled = false;
         async function load() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const data = await fetchHoldingsFull();
-                if (!cancelled) {
-                    setHoldings(buildHoldingRows(data));
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    setError(err instanceof Error ? err.message : 'Failed to load holdings.');
-                }
-            } finally {
-                if (!cancelled) setIsLoading(false);
-            }
+            if (cancelled) return;
+            await loadHoldings();
         }
         load();
         return () => { cancelled = true; };
-    }, [refreshTrigger]);
+    }, [refreshTrigger, loadHoldings]);
 
     const handleDelete = useCallback(async (id: number, ticker: string) => {
         try {
             await deleteHolding(id);
-            setHoldings((prev) => prev.filter((h) => h.id !== id));
-            setDeleteConfirmId(null);
             toast.success(`${ticker} removed. Allocation and totals updated.`);
+            await loadHoldings();
+            setDeleteConfirmId(null);
         } catch {
             toast.error(`Failed to delete ${ticker}.`);
         }
+    }, [loadHoldings]);
+
+    const openEdit = useCallback((row: HoldingRow) => {
+        setEditTarget(row);
+        setEditQuantity(String(row.quantity));
+        setEditPrice(String(row.averagePurchasePrice));
     }, []);
+
+    const closeEdit = useCallback(() => {
+        setEditTarget(null);
+        setEditQuantity('');
+        setEditPrice('');
+    }, []);
+
+    const handleUpdate = useCallback(async () => {
+        if (!editTarget) return;
+        const qty = parseFloat(editQuantity);
+        const avgPrice = parseFloat(editPrice);
+        if (isNaN(qty) || qty <= 0) {
+            toast.error('Quantity must be greater than 0.');
+            return;
+        }
+        if (isNaN(avgPrice) || avgPrice < 0) {
+            toast.error('Average price must be 0 or greater.');
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            await updateHolding(editTarget.id, {
+                quantity: qty,
+                averagePurchasePrice: editTarget.assetType === 'CASH' || editTarget.assetType === 'BANK_DEPOSIT' ? 1.00 : avgPrice,
+            }, PRICE_MODE);
+            toast.success(`${editTarget.ticker} updated.`);
+            closeEdit();
+            await loadHoldings();
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to update holding.';
+            toast.error(message);
+        } finally {
+            setIsUpdating(false);
+        }
+    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings]);
 
     const filteredHoldings = holdings.filter((row) => {
         if (activeFilter === 'All') return true;
@@ -88,6 +149,7 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
     });
 
     const deleteTarget = holdings.find((h) => h.id === deleteConfirmId);
+    const isEditFixedPrice = editTarget?.assetType === 'CASH' || editTarget?.assetType === 'BANK_DEPOSIT';
 
     return (
         <>
@@ -115,7 +177,7 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                     {error && (
                         <div className="holdings-error-banner" role="alert">
                             <p>{error}</p>
-                            <button className="holdings-error-retry" onClick={() => setHoldings([])}>Retry</button>
+                            <button className="holdings-error-retry" onClick={loadHoldings}>Retry</button>
                         </div>
                     )}
 
@@ -144,6 +206,7 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                                 <th>Market Value</th>
                                 <th>P/L</th>
                                 <th>Allocation</th>
+                                <th>Status</th>
                                 <th></th>
                             </tr>
                             </thead>
@@ -157,9 +220,6 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                                         {row.currentPrice != null
                                             ? formatMoney(row.currentPrice)
                                             : formatMoney(row.averagePurchasePrice)}
-                                        {row.priceStatus === 'DEMO' && (
-                                            <span className="price-status-demo"> demo</span>
-                                        )}
                                     </td>
                                     <td className="ledger-value">
                                         {row.marketValue != null ? formatMoney(row.marketValue) : '—'}
@@ -168,7 +228,19 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                                         {formatPl(row.pl)}
                                     </td>
                                     <td>{row.allocationStr}</td>
+                                    <td>
+                                        <span className={`price-status-badge price-status-${row.priceStatus.toLowerCase()}`}>
+                                            {getPriceStatusLabel(row.priceStatus)}
+                                        </span>
+                                    </td>
                                     <td className="ledger-action-cell">
+                                        <button
+                                            className="ledger-edit-btn"
+                                            onClick={() => openEdit(row)}
+                                            title={`Edit ${row.ticker}`}
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
                                         <button
                                             className="ledger-delete-btn"
                                             onClick={() => setDeleteConfirmId(row.id)}
@@ -201,17 +273,47 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                             This action cannot be undone.
                         </p>
                         <div className="delete-dialog-actions">
-                            <button
-                                className="delete-dialog-cancel"
-                                onClick={() => setDeleteConfirmId(null)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="delete-dialog-confirm"
-                                onClick={() => handleDelete(deleteConfirmId, deleteTarget.ticker)}
-                            >
-                                Delete
+                            <button className="delete-dialog-cancel" onClick={() => setDeleteConfirmId(null)}>Cancel</button>
+                            <button className="delete-dialog-confirm" onClick={() => handleDelete(deleteConfirmId, deleteTarget.ticker)}>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {editTarget !== null && (
+                <div className="delete-overlay" onClick={closeEdit}>
+                    <div className="delete-dialog" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="delete-dialog-title">Edit {editTarget.ticker}</h3>
+                        <div className="edit-form-field">
+                            <label className="add-holding-label">Quantity</label>
+                            <input
+                                className="add-holding-input"
+                                type="number"
+                                value={editQuantity}
+                                onChange={(e) => setEditQuantity(e.target.value)}
+                                min="1"
+                                disabled={isUpdating}
+                            />
+                        </div>
+                        <div className="edit-form-field">
+                            <label className="add-holding-label">Average purchase price</label>
+                            <input
+                                className="add-holding-input"
+                                type="number"
+                                value={editPrice}
+                                onChange={(e) => setEditPrice(e.target.value)}
+                                min="0"
+                                step="0.01"
+                                disabled={isUpdating || isEditFixedPrice}
+                            />
+                            {isEditFixedPrice && (
+                                <span className="add-holding-hint">Fixed at 1.00 for {editTarget.assetType === 'CASH' ? 'cash' : 'bank deposit'}.</span>
+                            )}
+                        </div>
+                        <div className="delete-dialog-actions">
+                            <button className="delete-dialog-cancel" onClick={closeEdit} disabled={isUpdating}>Cancel</button>
+                            <button className="delete-dialog-confirm" onClick={handleUpdate} disabled={isUpdating}>
+                                {isUpdating ? 'Saving...' : 'Save'}
                             </button>
                         </div>
                     </div>
