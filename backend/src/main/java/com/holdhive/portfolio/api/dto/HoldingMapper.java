@@ -20,6 +20,7 @@ public final class HoldingMapper {
     public static HoldingResponse toResponse(HoldingView holding) {
         return new HoldingResponse(
             holding.id(),
+            holding.instrumentId(),
             holding.ticker(),
             holding.exchangeCode(),
             holding.displayName(),

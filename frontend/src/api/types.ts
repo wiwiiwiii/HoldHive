@@ -12,6 +12,7 @@ export type ValuationStatus = 'EMPTY' | 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
 
 export interface HoldingResponse {
   id: number;
+  instrumentId: number;
   assetType: AssetType;
   ticker: string;
   exchangeCode: string | null;
