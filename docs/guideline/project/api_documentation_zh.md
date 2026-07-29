@@ -561,6 +561,75 @@ POST /api/v1/portfolio/analysis
 
 > TODO：以上响应字段拆分较细（6 个独立结果对象），后续计划根据前端实际使用情况做简化/合并。
 
+### 4.13 当前组合分析 — 结构化事实
+
+```http
+GET /api/v1/portfolio/analysis/insights
+```
+
+从服务端当前默认组合读取持仓（不接受客户端传入的市值），计算 L0-L4 结构化事实。**不调用 LLM**，响应快。
+
+成功响应：`200 OK`，返回 `PortfolioAnalysisFacts` JSON 对象：
+
+| 字段 | 说明 |
+| --- | --- |
+| `overview` | 总市值 + 按资产类型的配置占比 |
+| `concentration` | HHI 集中度指数、最大持仓、Top5 占比、风险等级 |
+| `fundOverlap` | 基金重仓股与直接持股的重叠情况 |
+| `lookThrough` | 基金穿透后按标的合并的有效敞口及穿透后 HHI |
+| `sectorExposure` | 穿透后按行业汇总的占比及行业 HHI |
+| `profitLoss` | 每笔持仓的浮动盈亏及百分比收益率 |
+
+### 4.14 当前组合分析 — AI 流式解读
+
+```http
+GET /api/v1/portfolio/analysis/insights/stream
+Accept: text/event-stream
+```
+
+从服务端当前默认组合读取持仓，计算 L0-L4 事实后调用 LLM 生成流式中文解读。每个 SSE `data:` 事件携带一小段文本。
+
+- LLM 未配置或调用失败时，降级为单条说明文本后正常结束，不返回 HTTP 错误。
+- 前端可用 `EventSource` 消费。
+
+### 4.15 当前组合分析 — 合并 SSE（推荐）
+
+```http
+GET /api/v1/portfolio/analysis/insights/full
+Accept: text/event-stream
+```
+
+**推荐前端使用的端点。** 合并了 4.13 和 4.14 的功能：先发送结构化事实，再流式发送 AI 解读。避免前端并发调用两个接口导致的重复数据库查询和基金持仓预取。
+
+SSE 事件序列：
+
+| 顺序 | 事件名 | 数据格式 | 说明 |
+| --- | --- | --- | --- |
+| 1 | `facts` | `{"type":"facts","payload":{...}}` | L0-L4 结构化事实（毫秒级到达） |
+| 2+ | `token` | `{"type":"token","payload":"文本片段"}` | LLM 流式输出的中文文本 |
+| 最后 | `done` | `{"type":"done"}` | 流正常结束 |
+
+前端消费示例：
+
+```typescript
+const es = new EventSource('/api/v1/portfolio/analysis/insights/full');
+
+es.addEventListener('facts', (e) => {
+  const { payload } = JSON.parse(e.data);
+  renderDataCards(payload);  // 立即渲染数据卡片
+});
+
+es.addEventListener('token', (e) => {
+  const { payload } = JSON.parse(e.data);
+  appendAiText(payload);     // 流式追加 AI 解读
+});
+
+es.addEventListener('done', () => es.close());
+es.onerror = () => { /* LLM 失败时 facts 已收到，降级展示 */ es.close(); };
+```
+
+**降级策略：** 如果 LLM 调用失败，客户端仍会收到 `facts` 事件，可正常展示数据卡片；仅 AI 解读区域显示降级提示。
+
 ## 5. 计算规则
 
 ```text

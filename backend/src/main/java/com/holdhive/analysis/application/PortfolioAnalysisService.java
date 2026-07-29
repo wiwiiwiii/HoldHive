@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +100,40 @@ public class PortfolioAnalysisService {
             "actionSuggestions": ["建议1", "建议2"]}
             """;
 
+    /**
+     * Streaming variant of {@link #SYSTEM_PROMPT}: asks for continuous Chinese
+     * prose instead of a JSON object, so tokens can be forwarded to the client
+     * as they arrive (a partial JSON document is not safely renderable, partial
+     * prose is). Keeps the same citation/derivation/wording rules as the
+     * blocking prompt so the two remain factually consistent with each other.
+     */
+    private static final String STREAM_SYSTEM_PROMPT = """
+            你是 HoldHive 的投资组合分析助手。用户消息中的 facts 字段（总市值、各资产类别占比、\
+            HHI 集中度指数、最大持仓占比、前N大持仓及其合计占比、基金与个股的重叠市值及占比、\
+            拆开基金后的实际个股持有比例及实际集中度指数（有效HHI）、\
+            行业维度的实际持有比例及行业集中度指数（含拆开基金后的口径）、\
+            各持仓的浮动盈亏）均已由程序精确计算完成。\
+            【规则一 · 引用规则】facts 中已有的单个数字（HHI、各项持仓占比、盈亏金额/收益率、行业占比、\
+            市值合计）必须原样精确引用，不得四舍五入或修改。\
+            【规则一 · 派生规则】允许你做简单的数值派生，让表述更贴近真人分析师的语言习惯：\
+            两个占比相加、相减、简单的倍数/比例比较；派生出的数字必须用"约""合计约""近"等词标记。\
+            禁止多步运算：不得计算加权平均、不得把3个以上的数字连加、不得自行重算 HHI 系数或拆基金后的持有比例。\
+            需要"前N大合计占比"时优先直接引用 concentration.topHoldingsCombinedPercent。\
+            【规则二】表述某只股票的实际持有比例时，必须以 lookThrough 的 effective 口径为准。\
+            【规则三】描述集中度的定性措辞必须与 concentration.riskLevel 严格一致：\
+            LOW 必须说"集中度低"，MEDIUM 必须说"集中度中等"，HIGH 必须说"集中度高"；\
+            不得使用"偏高""偏低""较高""过高"等可能与 riskLevel 相矛盾的措辞；引用 HHI 数值时需附带阈值参照\
+            （小于0.15为低，0.15至0.25为中，大于0.25为高）。\
+            你的任务是基于这些事实生成一段连续的中文解读，语气自然、专业，像真人分析师的报告。\
+            请直接输出纯文本（不要输出 JSON、不要输出 markdown 代码块标记），按以下顺序自然衔接成段落：\
+            1）整体总结；2）集中度风险解读（HHI/最大持仓/前N大合计占比）；\
+            3）行业实际持有比例解读（须点名 sectorExposure.topSector 及其占比，覆盖度偏低需说明）；\
+            4）基金与个股重叠解读（若组合中没有任何 FUND 类型持仓，跳过此段，不要写"不适用"之类的套话）；\
+            5）拆开基金后的实际持有比例解读（若无 FUND 持仓同样跳过）；\
+            6）盈亏解读（缺失成本数据需说明）；7）1-3条具体可执行的分散化建议。\
+            全文控制在500字以内。
+            """;
+
     private final OverviewCalculator overviewCalculator = new OverviewCalculator();
     private final ConcentrationCalculator concentrationCalculator = new ConcentrationCalculator();
     private final FundOverlapCalculator fundOverlapCalculator = new FundOverlapCalculator();
@@ -127,6 +162,26 @@ public class PortfolioAnalysisService {
                 .map(this::toFact)
                 .toList();
 
+        PortfolioAnalysisFacts result = computeFacts(facts);
+
+        String userPrompt = buildUserPrompt(request.baseCurrencyOrDefault(), facts, result);
+        Optional<JsonNode> narrative = deepSeekClient.requestNarrative(SYSTEM_PROMPT, userPrompt);
+
+        if (narrative.isEmpty()) {
+            log.info("Returning facts-only portfolio analysis (LLM unavailable)");
+            return new PortfolioAnalysisResponse(result.overview(), result.concentration(), result.fundOverlap(), result.lookThrough(), result.sectorExposure(), result.profitLoss(), null, "LLM_UNAVAILABLE");
+        }
+        return new PortfolioAnalysisResponse(result.overview(), result.concentration(), result.fundOverlap(), result.lookThrough(), result.sectorExposure(), result.profitLoss(), narrative.get(), null);
+    }
+
+    /**
+     * Computes the deterministic L0-L4 (+L3b sector) facts for an arbitrary
+     * holding list - no LLM call. Shared by the blocking {@link #analyze}
+     * entrypoint and by callers that only need structured facts (the
+     * {@code /insights} endpoint) or need the facts merely to build an LLM
+     * prompt (the streaming {@code /insights/stream} endpoint).
+     */
+    public PortfolioAnalysisFacts computeFacts(List<HoldingFact> facts) {
         // Fetch every distinct FUND holding's snapshot exactly once, in parallel,
         // instead of letting each of the three fund-aware calculators below call
         // fundHoldingsLookup.find() independently (previously relying on
@@ -141,14 +196,39 @@ public class PortfolioAnalysisService {
         SectorExposureResult sectorExposure = sectorExposureCalculator.calculate(facts, sectorLookup, prefetchedFundLookup);
         ProfitLossResult profitLoss = profitLossCalculator.calculate(facts);
 
-        String userPrompt = buildUserPrompt(request, overview, concentration, fundOverlap, lookThrough, sectorExposure, profitLoss);
-        Optional<JsonNode> narrative = deepSeekClient.requestNarrative(SYSTEM_PROMPT, userPrompt);
+        return new PortfolioAnalysisFacts(overview, concentration, fundOverlap, lookThrough, sectorExposure, profitLoss);
+    }
 
-        if (narrative.isEmpty()) {
-            log.info("Returning facts-only portfolio analysis (LLM unavailable)");
-            return new PortfolioAnalysisResponse(overview, concentration, fundOverlap, lookThrough, sectorExposure, profitLoss, null, "LLM_UNAVAILABLE");
-        }
-        return new PortfolioAnalysisResponse(overview, concentration, fundOverlap, lookThrough, sectorExposure, profitLoss, narrative.get(), null);
+    /**
+     * Streams a free-form Chinese narrative for the given holdings via DeepSeek
+     * (see {@link DeepSeekClient#streamNarrative}). {@code onToken} is invoked
+     * once per received text chunk (in order); exactly one of {@code onComplete}
+     * or {@code onError} is invoked exactly once at the end.
+     */
+    public void streamNarrative(
+            String baseCurrency,
+            List<HoldingFact> holdings,
+            Consumer<String> onToken,
+            Runnable onComplete,
+            Consumer<Throwable> onError) {
+        PortfolioAnalysisFacts facts = computeFacts(holdings);
+        streamNarrative(baseCurrency, holdings, facts, onToken, onComplete, onError);
+    }
+
+    /**
+     * Streaming variant that accepts externally computed facts, avoiding a
+     * redundant {@link #computeFacts} call when the caller has already computed
+     * them (e.g. the combined {@code /insights/full} endpoint).
+     */
+    public void streamNarrative(
+            String baseCurrency,
+            List<HoldingFact> holdings,
+            PortfolioAnalysisFacts precomputedFacts,
+            Consumer<String> onToken,
+            Runnable onComplete,
+            Consumer<Throwable> onError) {
+        String userPrompt = buildUserPrompt(baseCurrency, holdings, precomputedFacts);
+        deepSeekClient.streamNarrative(STREAM_SYSTEM_PROMPT, userPrompt, onToken, onComplete, onError);
     }
 
     private HoldingFact toFact(HoldingInput input) {
@@ -202,26 +282,19 @@ public class PortfolioAnalysisService {
         }
     }
 
-    private String buildUserPrompt(
-            AnalyzePortfolioRequest request,
-            OverviewResult overview,
-            ConcentrationResult concentration,
-            FundOverlapResult fundOverlap,
-            LookThroughResult lookThrough,
-            SectorExposureResult sectorExposure,
-            ProfitLossResult profitLoss) {
+    private String buildUserPrompt(String baseCurrency, List<HoldingFact> holdings, PortfolioAnalysisFacts facts) {
         try {
             Map<String, Object> payload = Map.of(
-                    "baseCurrency", request.baseCurrencyOrDefault(),
-                    "holdings", request.holdings(),
+                    "baseCurrency", baseCurrency,
+                    "holdings", holdings,
                     "facts", Map.of(
-                            "overview", overview,
-                            "concentration", concentration,
-                            "fundOverlap", fundOverlap,
-                            "lookThrough", lookThrough,
-                            "sectorExposure", sectorExposure,
-                            "profitLoss", profitLoss));
-            return "请基于以下 facts 生成解读 JSON：\n" + objectMapper.writeValueAsString(payload);
+                            "overview", facts.overview(),
+                            "concentration", facts.concentration(),
+                            "fundOverlap", facts.fundOverlap(),
+                            "lookThrough", facts.lookThrough(),
+                            "sectorExposure", facts.sectorExposure(),
+                            "profitLoss", facts.profitLoss()));
+            return "请基于以下 facts 生成解读：\n" + objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to serialize facts payload for LLM prompt", e);
         }

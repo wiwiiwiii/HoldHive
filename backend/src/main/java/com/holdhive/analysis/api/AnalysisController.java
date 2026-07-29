@@ -13,8 +13,13 @@ import com.holdhive.analysis.application.PortfolioAnalysisService;
 import jakarta.validation.Valid;
 
 /**
- * Standalone demo endpoint for layered portfolio analysis. Not wired into the
- * main backend on purpose - see README.md for the migration plan.
+ * Request-driven layered portfolio analysis: the caller supplies the full
+ * holding list (ticker/assetType/quantity/marketValue/costBasis) directly in
+ * the request body, and the response includes a blocking LLM narrative.
+ * Kept for compatibility/manual testing; for the app's own Analysis page,
+ * prefer {@link PortfolioInsightsController}, which reads the current
+ * portfolio's already-priced holdings server-side instead of trusting
+ * client-supplied market values.
  */
 @RestController
 @RequestMapping("/api/v1/portfolio")
