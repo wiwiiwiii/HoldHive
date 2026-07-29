@@ -1,6 +1,9 @@
 package com.holdhive.pricing.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -14,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.holdhive.portfolio.domain.AssetType;
 import com.holdhive.portfolio.persistence.entity.InstrumentEntity;
@@ -49,6 +54,63 @@ class CachedPricingAdapterTest {
 
         assertThat(quote.priceStatus()).isEqualTo(PriceStatus.LIVE);
         assertThat(quote.currentPrice()).isEqualByComparingTo("210.25000000");
+    }
+
+    @Test
+    void returnsLiveQuoteWhenSnapshotWriteFails() {
+        InstrumentEntity instrument = new InstrumentEntity(
+            AssetType.STOCK,
+            "AAPL",
+            "NASDAQ",
+            "Apple Inc.",
+            "EASTMONEY",
+            "105.AAPL",
+            "USD"
+        );
+        when(instrumentRepository.findFirstByProviderQuoteIdIgnoreCase("105.AAPL"))
+            .thenReturn(Optional.of(instrument));
+        when(priceSnapshotRepository.save(any(PriceSnapshotEntity.class)))
+            .thenThrow(new InvalidDataAccessApiUsageException("Connection is read-only"));
+
+        CachedPricingAdapter adapter = adapter(
+            ids -> List.of(liveQuote("105.AAPL", "AAPL", "210.25")),
+            ids -> List.of()
+        );
+
+        MarketQuote quote = adapter.quote("105.AAPL");
+
+        assertThat(quote.priceStatus()).isEqualTo(PriceStatus.LIVE);
+        assertThat(quote.currentPrice()).isEqualByComparingTo("210.25000000");
+    }
+
+    @Test
+    void skipsSnapshotWriteInsideReadOnlyTransaction() {
+        InstrumentEntity instrument = new InstrumentEntity(
+            AssetType.STOCK,
+            "AAPL",
+            "NASDAQ",
+            "Apple Inc.",
+            "EASTMONEY",
+            "105.AAPL",
+            "USD"
+        );
+        when(instrumentRepository.findFirstByProviderQuoteIdIgnoreCase("105.AAPL"))
+            .thenReturn(Optional.of(instrument));
+        TransactionSynchronizationManager.setCurrentTransactionReadOnly(true);
+        try {
+            CachedPricingAdapter adapter = adapter(
+                ids -> List.of(liveQuote("105.AAPL", "AAPL", "210.25")),
+                ids -> List.of()
+            );
+
+            MarketQuote quote = adapter.quote("105.AAPL");
+
+            assertThat(quote.priceStatus()).isEqualTo(PriceStatus.LIVE);
+            assertThat(quote.currentPrice()).isEqualByComparingTo("210.25000000");
+            verify(priceSnapshotRepository, never()).save(any(PriceSnapshotEntity.class));
+        } finally {
+            TransactionSynchronizationManager.setCurrentTransactionReadOnly(false);
+        }
     }
 
     @Test
