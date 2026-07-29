@@ -1447,6 +1447,11 @@ code {
 }
 
 /* ===== 15. Add Holding Page ===== */
+.add-holding-page-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
 .add-holding-layout {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -2092,6 +2097,7 @@ code {
   .dark .fund-warning-text {
     color: #c9a84c;
   }
+}
 
   .add-holding-select {
     appearance: auto;
@@ -2218,4 +2224,146 @@ code {
   .dark .add-holding-search-spinner {
     color: #8896aa;
   }
-}
+
+  .add-holding-select {
+    appearance: auto;
+    cursor: pointer;
+  }
+
+  .add-holding-selected-badge {
+    position: absolute;
+    right: 12px;
+    top: 36px;
+    font-size: 0.72rem;
+    color: var(--honey);
+    font-weight: 600;
+    background: var(--honey-soft);
+    padding: 2px 8px;
+    border-radius: 999px;
+    pointer-events: none;
+  }
+
+  .add-holding-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--card);
+    border: 1px solid var(--line-darker);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    list-style: none;
+    padding: 6px;
+    margin: 6px 0 0;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .add-holding-search-item {
+    display: grid;
+    grid-template-columns: 72px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+  }
+
+  .add-holding-search-item:hover,
+  .add-holding-search-item.selected {
+    background: var(--honey-soft);
+  }
+
+  .search-item-ticker {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--ink);
+    font-family: 'SF Mono', 'Menlo', monospace;
+  }
+
+  .search-item-name {
+    font-size: 0.82rem;
+    color: var(--muted-darker);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .search-item-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+    background: var(--line);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .add-holding-fund-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fff9ed;
+    border: 1px solid #f5e6c8;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+    color: #8a6d2b;
+    line-height: 1.4;
+  }
+
+  .dark .add-holding-fund-warning {
+    background: #1a1810;
+    border-color: #2a2520;
+    color: #c9a84c;
+  }
+
+  .add-holding-search-spinner {
+    position: absolute;
+    right: 12px;
+    top: 38px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .dark .add-holding-search-dropdown {
+    background: #16151c;
+    border-color: #2a2a35;
+  }
+
+  .dark .add-holding-search-item:hover,
+  .dark .add-holding-search-item.selected {
+    background: #1e1d28;
+  }
+
+  .dark .search-item-ticker {
+    color: #e8e6e3;
+  }
+
+  .dark .search-item-name {
+    color: #8896aa;
+  }
+
+  .dark .search-item-meta {
+    background: #2a2a35;
+    color: #6b7280;
+  }
+
+  .dark .search-clear-btn {
+    color: #8896aa;
+  }
+
+  .dark .search-clear-btn:hover {
+    color: #e8e6e3;
+  }
+
+  .dark .add-holding-search-spinner {
+    color: #8896aa;
+  }
+
+  .dark .add-holding-selected-badge {
+    background: #2a2520;
+    color: #c9a84c;
+  }
