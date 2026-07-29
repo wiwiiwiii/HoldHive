@@ -225,6 +225,7 @@ curl "http://localhost:8080/api/v1/holdings/1?priceMode=DEMO_ALLOWED"
 
 - Existing holding -> `200 OK`, response body is a `Holding`.
 - Missing holding -> `404 Not Found`, `code: HOLDING_NOT_FOUND`.
+- `Holding.instrumentId` must be present; use it, not `Holding.id`, when opening `/api/v1/funds/{instrumentId}/lookthrough`.
 
 ### PATCH /api/v1/holdings/{holdingId}
 
@@ -280,6 +281,8 @@ Expected fields for the example above:
 
 ```json
 {
+  "id": 1,
+  "instrumentId": 2,
   "ticker": "MSFT",
   "exchangeCode": "NASDAQ",
   "assetType": "STOCK",
