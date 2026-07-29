@@ -1,8 +1,16 @@
 package com.holdhive.analysis.infrastructure.llm;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,5 +114,88 @@ public class DeepSeekClient {
         }
         Object contentObj = messageMap.get("content");
         return contentObj == null ? null : contentObj.toString();
+    }
+
+    /**
+     * Streams a narrative from DeepSeek using its OpenAI-compatible
+     * {@code stream: true} chat completions mode instead of a single blocking
+     * response. Deliberately uses the JDK's {@link HttpClient} (rather than
+     * {@link RestTemplate}, which does not expose a streamed response body)
+     * so no new reactive/WebFlux dependency is required.
+     *
+     * <p>Contract: {@code onToken} is invoked once per non-empty text chunk,
+     * in order; exactly one of {@code onComplete} or {@code onError} is
+     * invoked exactly once when the stream ends. If the API key is missing,
+     * {@code onToken} receives a single explanatory fallback chunk and
+     * {@code onComplete} is invoked - mirroring {@link #requestNarrative}'s
+     * facts-only degradation instead of leaving the caller hanging.
+     */
+    public void streamNarrative(
+            String systemPrompt,
+            String userPrompt,
+            Consumer<String> onToken,
+            Runnable onComplete,
+            Consumer<Throwable> onError) {
+        if (properties.apiKey() == null || properties.apiKey().isBlank()) {
+            log.warn("holdhive.llm.api-key is not set - skipping DeepSeek stream and returning a fallback message");
+            onToken.accept("AI 解读功能暂未配置，以下仅展示结构化数据。");
+            onComplete.run();
+            return;
+        }
+
+        long timeoutMs = properties.timeoutMs() > 0 ? properties.timeoutMs() : 60_000L;
+        try {
+            Map<String, Object> requestBody = Map.of(
+                    "model", properties.model(),
+                    "messages", List.of(
+                            Map.of("role", "system", "content", systemPrompt),
+                            Map.of("role", "user", "content", userPrompt)),
+                    "stream", true,
+                    "temperature", 0.3);
+
+            HttpClient httpClient = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofMillis(timeoutMs))
+                    .build();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(properties.baseUrl() + "/chat/completions"))
+                    .timeout(Duration.ofMillis(timeoutMs))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + properties.apiKey())
+                    .POST(BodyPublishers.ofString(objectMapper.writeValueAsString(requestBody)))
+                    .build();
+
+            HttpResponse<java.util.stream.Stream<String>> response =
+                    httpClient.send(httpRequest, BodyHandlers.ofLines());
+
+            if (response.statusCode() != 200) {
+                onError.accept(new IllegalStateException("DeepSeek stream call returned HTTP " + response.statusCode()));
+                return;
+            }
+
+            response.body().forEach(line -> handleStreamLine(line, onToken));
+            onComplete.run();
+        } catch (Exception e) {
+            log.warn("DeepSeek streaming call failed: {}", e.getMessage());
+            onError.accept(e);
+        }
+    }
+
+    private void handleStreamLine(String line, Consumer<String> onToken) {
+        if (line == null || !line.startsWith("data:")) {
+            return;
+        }
+        String data = line.substring("data:".length()).trim();
+        if (data.isEmpty() || data.equals("[DONE]")) {
+            return;
+        }
+        try {
+            JsonNode node = objectMapper.readTree(data);
+            JsonNode delta = node.at("/choices/0/delta/content");
+            if (!delta.isMissingNode() && delta.isTextual() && !delta.asText().isEmpty()) {
+                onToken.accept(delta.asText());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse DeepSeek stream chunk, skipping: {}", e.getMessage());
+        }
     }
 }
