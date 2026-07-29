@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   Hexagon,
   LayoutDashboard,
@@ -44,12 +44,46 @@ export function App() {
   const [isDark, setIsDark] = useState(false);
   const [showAddHolding, setShowAddHolding] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const addHoldingRef = useRef<{ reset: () => void } | null>(null);
 
   const pageInfo = PAGE_INFO[activeNav] ?? PAGE_INFO.Dashboard;
+
   const handleHoldingSaved = useCallback(() => {
     setShowAddHolding(false);
     setRefreshKey((k) => k + 1);
   }, []);
+
+  const handleNavClick = useCallback((label: string) => {
+    setActiveNav(label);
+    setShowAddHolding(false);
+  }, []);
+
+  const handleAddClick = useCallback(() => {
+    setShowAddHolding(true);
+  }, []);
+
+  const handleBackClick = useCallback(() => {
+    setShowAddHolding(false);
+  }, []);
+
+  const renderPage = () => {
+    if (activeNav === 'Gateway') {
+      return <GatewayPage onNavigate={handleNavClick} onAddHolding={handleAddClick} isDark={isDark} />;
+    }
+    if (activeNav === 'Dashboard') return <DashboardPage />;
+    if (activeNav === 'Holdings') return <HoldingsPage isDark={isDark} refreshTrigger={refreshKey} />;
+    if (activeNav === 'Performance') return <PerformancePage />;
+    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} />;
+    if (activeNav === 'Settings') return <SettingsPage isDark={isDark} onThemeChange={setIsDark} />;
+    return (
+        <div className="placeholder-page">
+          <Hexagon size={48} className="placeholder-icon" />
+          <h2 className="placeholder-title">{pageInfo.title}</h2>
+          <p className="placeholder-subtitle">{pageInfo.subtitle}</p>
+          <p className="placeholder-hint">Coming soon</p>
+        </div>
+    );
+  };
 
   return (
       <div className={`app-container ${isDark ? 'dark' : ''}`}>
@@ -68,12 +102,12 @@ export function App() {
           <nav className="sidebar-nav">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
-              const isActive = item.label === activeNav;
+              const isActive = item.label === activeNav && !showAddHolding;
               return (
                   <button
                       key={item.label}
                       className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                      onClick={() => setActiveNav(item.label)}
+                      onClick={() => handleNavClick(item.label)}
                   >
                     <Icon size={20} />
                     <span>{item.label}</span>
@@ -88,8 +122,8 @@ export function App() {
         <main className="main-content">
           <header className="content-header">
             <div>
-              <h1 className="page-title">{pageInfo.title}</h1>
-              <p className="page-subtitle">{pageInfo.subtitle}</p>
+              <h1 className="page-title">{showAddHolding ? 'Add Holding' : pageInfo.title}</h1>
+              <p className="page-subtitle">{showAddHolding ? 'Search a ticker and create a new position' : pageInfo.subtitle}</p>
             </div>
             <div className="header-actions">
               <button className="theme-toggle" onClick={() => setIsDark(!isDark)}>
@@ -97,13 +131,13 @@ export function App() {
                 Day / Night
               </button>
               {activeNav !== 'Gateway' && !showAddHolding && (
-                  <button className="add-button" onClick={() => setShowAddHolding(true)}>
+                  <button className="add-button" onClick={handleAddClick}>
                     <Plus size={16} />
                     Add
                   </button>
               )}
               {showAddHolding && (
-                  <button className="add-button" onClick={() => setShowAddHolding(false)}>
+                  <button className="add-button" onClick={handleBackClick}>
                     Back
                   </button>
               )}
@@ -112,25 +146,8 @@ export function App() {
 
           {showAddHolding ? (
               <AddHoldingPage isDark={isDark} onSaved={handleHoldingSaved} />
-          ) : activeNav === 'Gateway' ? (
-              <GatewayPage onNavigate={setActiveNav} isDark={isDark} />
-          ) : activeNav === 'Dashboard' ? (
-              <DashboardPage />
-          ) : activeNav === 'Holdings' ? (
-              <HoldingsPage isDark={isDark} refreshTrigger={refreshKey} />
-          ) : activeNav === 'Performance' ? (
-              <PerformancePage />
-          ) : activeNav === 'Analysis' ? (
-              <AnalysisPage isDark={isDark} />
-          ) : activeNav === 'Settings' ? (
-              <SettingsPage isDark={isDark} onThemeChange={setIsDark} />
           ) : (
-              <div className="placeholder-page">
-                <Hexagon size={48} className="placeholder-icon" />
-                <h2 className="placeholder-title">{pageInfo.title}</h2>
-                <p className="placeholder-subtitle">{pageInfo.subtitle}</p>
-                <p className="placeholder-hint">Coming soon</p>
-              </div>
+              renderPage()
           )}
         </main>
 

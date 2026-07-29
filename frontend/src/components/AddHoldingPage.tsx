@@ -1,6 +1,16 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { createHolding } from '../api/portfolioApi';
+import { createHolding, searchMarket } from '../api/portfolioApi';
+import type { AssetType, MarketSearchItem } from '../api/types';
+
+const ASSET_TYPES: { value: AssetType; label: string }[] = [
+    { value: 'STOCK', label: 'Stock' },
+    { value: 'ETF', label: 'ETF' },
+    { value: 'MUTUAL_FUND', label: 'Mutual Fund' },
+    { value: 'CRYPTO', label: 'Crypto' },
+    { value: 'CASH', label: 'Cash' },
+    { value: 'BANK_DEPOSIT', label: 'Bank Deposit' },
+];
 
 function hexagonPoints(cx: number, cy: number, r: number): string {
     const pts = [];
@@ -24,37 +34,92 @@ interface FormErrors {
 }
 
 export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
-    const [ticker, setTicker] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<MarketSearchItem[]>([]);
+    const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<MarketSearchItem | null>(null);
+    const [isSearching, setIsSearching] = useState(false);
+
+    const [assetType, setAssetType] = useState<AssetType>('STOCK');
     const [quantity, setQuantity] = useState('');
     const [price, setPrice] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<FormErrors>({});
 
+    const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowSearchDropdown(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSearchInput = useCallback((value: string) => {
+        setSearchQuery(value);
+        setSelectedItem(null);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        if (!value.trim()) {
+            setSearchResults([]);
+            setShowSearchDropdown(false);
+            return;
+        }
+        searchTimerRef.current = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const result = await searchMarket(value.trim());
+                setSearchResults(result.results);
+                setShowSearchDropdown(true);
+            } catch {
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+    }, []);
+
+    const handleSelectResult = useCallback((item: MarketSearchItem) => {
+        setSelectedItem(item);
+        setSearchQuery(item.ticker);
+        setAssetType(item.assetType);
+        setShowSearchDropdown(false);
+        setErrors((prev) => ({ ...prev, ticker: undefined }));
+    }, []);
+
+    const isFundType = assetType === 'ETF' || assetType === 'MUTUAL_FUND';
+    const isFixedPriceType = assetType === 'CASH' || assetType === 'BANK_DEPOSIT';
+
     const costBasis = useMemo(() => {
         const qty = parseFloat(quantity);
-        const avgPrice = parseFloat(price);
+        const avgPrice = isFixedPriceType ? 1 : parseFloat(price);
         if (isNaN(qty) || isNaN(avgPrice) || qty <= 0 || avgPrice <= 0) return null;
         return qty * avgPrice;
-    }, [quantity, price]);
+    }, [quantity, price, isFixedPriceType]);
 
     const qtyNum = parseInt(quantity);
 
     const validate = useCallback((): boolean => {
         const newErrors: FormErrors = {};
-        if (!ticker.trim()) {
-            newErrors.ticker = 'Ticker is required.';
+        if (!searchQuery.trim() && !selectedItem) {
+            newErrors.ticker = 'Please search and select a ticker.';
         }
         const qty = parseFloat(quantity);
         if (!quantity || isNaN(qty) || qty <= 0) {
             newErrors.quantity = 'Must be greater than 0.';
         }
-        const avgPrice = parseFloat(price);
-        if (!price || isNaN(avgPrice) || avgPrice < 0) {
-            newErrors.price = 'Must be 0 or greater.';
+        if (!isFixedPriceType) {
+            const avgPrice = parseFloat(price);
+            if (!price || isNaN(avgPrice) || avgPrice < 0) {
+                newErrors.price = 'Must be 0 or greater.';
+            }
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [ticker, quantity, price]);
+    }, [searchQuery, selectedItem, quantity, price, isFixedPriceType]);
 
     const handleSave = useCallback(async () => {
         if (!validate()) return;
@@ -62,15 +127,23 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
         setIsSubmitting(true);
         try {
             await createHolding({
-                assetType: 'STOCK',
-                ticker: ticker.trim().toUpperCase(),
+                assetType,
+                ticker: selectedItem?.ticker ?? searchQuery.trim().toUpperCase(),
+                exchangeCode: selectedItem?.exchangeCode,
+                displayName: selectedItem?.displayName,
+                providerQuoteId: selectedItem?.providerQuoteId,
+                currency: selectedItem ? undefined : undefined,
                 quantity: parseFloat(quantity),
-                averagePurchasePrice: parseFloat(price),
+                averagePurchasePrice: isFixedPriceType ? 1 : parseFloat(price),
             });
-            toast.success(`${ticker.toUpperCase()} added. Portfolio totals refreshed.`);
-            setTicker('');
+            const displayTicker = selectedItem?.ticker ?? searchQuery.trim().toUpperCase();
+            toast.success(`${displayTicker} added. Portfolio totals refreshed.`);
+            setSearchQuery('');
+            setSelectedItem(null);
+            setSearchResults([]);
             setQuantity('');
             setPrice('');
+            setAssetType('STOCK');
             setErrors({});
             onSaved?.();
         } catch (err) {
@@ -79,29 +152,67 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
         } finally {
             setIsSubmitting(false);
         }
-    }, [ticker, quantity, price, validate, onSaved]);
+    }, [assetType, selectedItem, searchQuery, quantity, price, isFixedPriceType, validate, onSaved]);
 
     return (
-        <>
+        <div className="add-holding-page-wrapper">
             <section className="add-holding-layout">
                 <div className="add-holding-form-card">
                     <h2 className="add-holding-form-title">New holding</h2>
-                    <p className="add-holding-form-subtitle">Ticker, quantity, and average price.</p>
+                    <p className="add-holding-form-subtitle">Search a ticker, choose type, and enter quantity.</p>
 
-                    <div className="add-holding-field">
+                    <div className="add-holding-field" ref={dropdownRef} style={{ position: 'relative' }}>
                         <label className="add-holding-label">Ticker</label>
                         <input
                             className={`add-holding-input ${errors.ticker ? 'input-error' : ''}`}
                             type="text"
-                            value={ticker}
-                            onChange={(e) => { setTicker(e.target.value.toUpperCase()); setErrors((prev) => ({ ...prev, ticker: undefined })); }}
-                            placeholder="e.g. AAPL"
+                            value={searchQuery}
+                            onChange={(e) => handleSearchInput(e.target.value)}
+                            onFocus={() => searchResults.length > 0 && setShowSearchDropdown(true)}
+                            placeholder="Search ticker, e.g. AAPL"
                             disabled={isSubmitting}
+                            autoComplete="off"
                         />
+                        {isSearching && <span className="add-holding-search-spinner">Searching...</span>}
                         <span className={`add-holding-hint ${errors.ticker ? 'hint-error' : ''}`}>
-                            {errors.ticker || 'Uppercase automatically'}
+                            {errors.ticker || 'Search and select from results'}
                         </span>
+                        {showSearchDropdown && searchResults.length > 0 && (
+                            <ul className="add-holding-search-dropdown">
+                                {searchResults.map((item) => (
+                                    <li
+                                        key={item.providerQuoteId}
+                                        className={`add-holding-search-item ${selectedItem?.providerQuoteId === item.providerQuoteId ? 'selected' : ''}`}
+                                        onClick={() => handleSelectResult(item)}
+                                    >
+                                        <span className="search-item-ticker">{item.ticker}</span>
+                                        <span className="search-item-name">{item.displayName}</span>
+                                        <span className="search-item-meta">{item.exchangeCode} · {item.assetType}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
+
+                    <div className="add-holding-field">
+                        <label className="add-holding-label">Asset type</label>
+                        <select
+                            className="add-holding-input add-holding-select"
+                            value={assetType}
+                            onChange={(e) => setAssetType(e.target.value as AssetType)}
+                            disabled={isSubmitting}
+                        >
+                            {ASSET_TYPES.map((t) => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {isFundType && (
+                        <div className="add-holding-fund-warning">
+                            Fund holdings may contain stocks that overlap with your direct stock holdings.
+                        </div>
+                    )}
 
                     <div className="add-holding-field">
                         <label className="add-holding-label">Quantity</label>
@@ -124,15 +235,15 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
                         <input
                             className={`add-holding-input ${errors.price ? 'input-error' : ''}`}
                             type="number"
-                            value={price}
+                            value={isFixedPriceType ? '1.00' : price}
                             onChange={(e) => { setPrice(e.target.value); setErrors((prev) => ({ ...prev, price: undefined })); }}
-                            placeholder="e.g. 175.50"
+                            placeholder={isFixedPriceType ? 'Fixed at 1.00' : 'e.g. 175.50'}
                             min="0"
                             step="0.01"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || isFixedPriceType}
                         />
                         <span className={`add-holding-hint ${errors.price ? 'hint-error' : ''}`}>
-                            {errors.price || 'Use the same currency as quote'}
+                            {errors.price || (isFixedPriceType ? 'Fixed at 1.00 for this type' : 'Use the same currency as quote')}
                         </span>
                     </div>
 
@@ -146,7 +257,15 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
                         </button>
                         <button
                             className="add-holding-cancel-btn"
-                            onClick={() => { setTicker(''); setQuantity(''); setPrice(''); setErrors({}); }}
+                            onClick={() => {
+                                setSearchQuery('');
+                                setSelectedItem(null);
+                                setSearchResults([]);
+                                setQuantity('');
+                                setPrice('');
+                                setAssetType('STOCK');
+                                setErrors({});
+                            }}
                             disabled={isSubmitting}
                         >
                             Cancel
@@ -170,7 +289,7 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
                                 textAnchor="middle"
                                 className="add-holding-hex-ticker"
                             >
-                                {ticker || '—'}
+                                {selectedItem?.ticker || searchQuery || '—'}
                             </text>
                             <text
                                 x="90"
@@ -193,6 +312,6 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
                     <p className="add-holding-preview-note">Input stays visible after errors.</p>
                 </div>
             </section>
-        </>
+        </div>
     );
 }

@@ -1,14 +1,16 @@
 export type AssetType =
-  | 'STOCK'
-  | 'ETF'
-  | 'MUTUAL_FUND'
-  | 'CRYPTO'
-  | 'CASH'
-  | 'BANK_DEPOSIT';
+    | 'STOCK'
+    | 'ETF'
+    | 'MUTUAL_FUND'
+    | 'CRYPTO'
+    | 'CASH'
+    | 'BANK_DEPOSIT';
 
 export type PriceStatus = 'LIVE' | 'CACHED' | 'DEMO' | 'FIXED' | 'UNAVAILABLE';
 
 export type ValuationStatus = 'EMPTY' | 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
+
+export type PriceMode = 'BEST_AVAILABLE' | 'DEMO_ALLOWED';
 
 export interface HoldingResponse {
   id: number;
@@ -81,5 +83,66 @@ export interface FundLookthroughResponse {
   source: string;
   coveragePercent: number;
   holdings: FundComponentResponse[];
+  warnings: string[];
+}
+
+export interface MarketSearchItem {
+  ticker: string;
+  displayName: string;
+  exchangeCode: string;
+  provider: string;
+  providerQuoteId: string;
+  assetType: AssetType;
+}
+
+export interface MarketSearchResult {
+  query: string;
+  results: MarketSearchItem[];
+  source: string;
+  cached: boolean;
+}
+
+export interface MarketQuote {
+  provider: string;
+  providerQuoteId: string;
+  ticker: string;
+  displayName: string;
+  currency: string;
+  currentPrice: number;
+  priceStatus: PriceStatus;
+  priceObservedAt: string;
+}
+
+export interface UnavailableQuote {
+  providerQuoteId: string;
+  reason: string;
+}
+
+export interface MarketQuoteResult {
+  provider: string;
+  priceMode: PriceMode;
+  quotes: MarketQuote[];
+  unavailable: UnavailableQuote[];
+}
+
+export interface PortfolioExposureItem {
+  ticker: string;
+  displayName: string;
+  assetType: AssetType;
+  directMarketValue: number;
+  fundLookthroughMarketValue: number;
+  totalExposureValue: number;
+  exposurePercent: number;
+  sources: string[];
+}
+
+export interface PortfolioExposure {
+  portfolioId: number;
+  portfolioName: string;
+  baseCurrency: string;
+  lookthrough: boolean;
+  priceMode: PriceMode;
+  totalMarketValue: number;
+  items: PortfolioExposureItem[];
   warnings: string[];
 }

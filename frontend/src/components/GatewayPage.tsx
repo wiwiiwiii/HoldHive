@@ -26,10 +26,11 @@ function hexagonPoints(cx: number, cy: number, r: number): string {
 
 interface GatewayPageProps {
     onNavigate: (page: string) => void;
+    onAddHolding?: () => void;
     isDark?: boolean;
 }
 
-export function GatewayPage({ onNavigate, isDark }: GatewayPageProps) {
+export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPageProps) {
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
     const [pressedNode, setPressedNode] = useState<string | null>(null);
 
@@ -110,7 +111,13 @@ export function GatewayPage({ onNavigate, isDark }: GatewayPageProps) {
                                 onMouseLeave={() => setHoveredNode(null)}
                                 onMouseDown={() => setPressedNode(node.label)}
                                 onMouseUp={() => setPressedNode(null)}
-                                onClick={() => onNavigate(node.label === 'Add Holding' ? 'Dashboard' : node.label)}
+                                onClick={() => {
+                                    if (node.label === 'Add Holding') {
+                                        onAddHolding?.();
+                                    } else {
+                                        onNavigate(node.label);
+                                    }
+                                }}
                                 style={{ cursor: 'pointer' }}
                             >
                                 {isHovered && !isPressed && (

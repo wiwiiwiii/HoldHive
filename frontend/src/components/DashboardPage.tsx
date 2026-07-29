@@ -11,11 +11,12 @@ import {
     Area,
     AreaChart,
 } from 'recharts';
-import { API_BASE_URL, fetchFundLookthrough, fetchHoldingsFull, fetchPortfolioSummary } from '../api/portfolioApi';
+import { API_BASE_URL, fetchFundLookthrough, fetchHoldingsFull, fetchPortfolioSummary, fetchPortfolioExposure } from '../api/portfolioApi';
 import type {
     AssetType,
     FundLookthroughResponse,
     HoldingResponse,
+    PortfolioExposure,
     PortfolioSummaryResponse,
     PriceStatus,
 } from '../api/types';
@@ -71,6 +72,7 @@ export function DashboardPage() {
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
     const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
     const [fundLookthrough, setFundLookthrough] = useState<FundLookthroughResponse | null>(null);
+    const [exposure, setExposure] = useState<PortfolioExposure | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -78,12 +80,14 @@ export function DashboardPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const [nextSummary, nextHoldings] = await Promise.all([
+            const [nextSummary, nextHoldings, nextExposure] = await Promise.all([
                 fetchPortfolioSummary(),
                 fetchHoldingsFull(),
+                fetchPortfolioExposure(true),
             ]);
             setSummary(nextSummary);
             setHoldings(nextHoldings);
+            setExposure(nextExposure);
             await refreshFundLookthrough(nextSummary);
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : 'Unable to load portfolio data.');
@@ -219,6 +223,9 @@ export function DashboardPage() {
 
     const displayPerformanceData = DEMO_PERFORMANCE_DATA;
 
+    const exposureWarnings = exposure?.warnings ?? [];
+    const exposureItems = exposure?.items ?? [];
+
     return (
         <div className="dashboard-page-wrapper">
             {error && (
@@ -317,7 +324,7 @@ export function DashboardPage() {
                         {summary ? `Snapshot value trend · ${getPriceStatusLabel(dataModeLabel as PriceStatus)}` : 'Snapshot value trend'}
                     </p>
                     <div className="performance-chart-wrapper">
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={200}>
                             <AreaChart data={displayPerformanceData}>
                                 <defs>
                                     <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
@@ -354,6 +361,50 @@ export function DashboardPage() {
                 </div>
             </section>
 
+            {exposureItems.length > 0 && (
+                <section className="charts-row">
+                    <div className="chart-card" style={{gridColumn: '1 / -1'}}>
+                        <h2 className="chart-title">Portfolio Exposure</h2>
+                        <p className="chart-subtitle">Direct + fund lookthrough positions</p>
+                        {exposureWarnings.length > 0 && (
+                            <div className="fund-warning-banner" style={{marginBottom: 16}}>
+                                <span className="fund-warning-icon"></span>
+                                <span className="fund-warning-text">{exposureWarnings.join(' ')}</span>
+                            </div>
+                        )}
+                        <table className="holdings-ledger-table">
+                            <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Type</th>
+                                <th>Direct Value</th>
+                                <th>Fund Lookthrough</th>
+                                <th>Total Exposure</th>
+                                <th>Exposure %</th>
+                                <th>Sources</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {exposureItems.map((item) => (
+                                <tr key={item.ticker}>
+                                    <td className="ledger-symbol">{item.ticker}</td>
+                                    <td>{item.assetType}</td>
+                                    <td>{item.directMarketValue > 0 ? formatMoney(item.directMarketValue) : '—'}</td>
+                                    <td>{item.fundLookthroughMarketValue > 0 ? formatMoney(item.fundLookthroughMarketValue) : '—'}</td>
+                                    <td className="ledger-value">{formatMoney(item.totalExposureValue)}</td>
+                                    <td>{formatPercent(item.exposurePercent * 100)}</td>
+                                    <td style={{
+                                        fontSize: '0.78rem',
+                                        color: 'var(--muted)'
+                                    }}>{item.sources.join(', ')}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            )}
+
             <section className="bottom-row">
                 <div className="holdings-card">
                     <h2 className="section-title">Your Holdings</h2>
@@ -366,6 +417,7 @@ export function DashboardPage() {
                                 <th>Qty</th>
                                 <th>Price</th>
                                 <th>Market Value</th>
+                                <th>Status</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -378,14 +430,17 @@ export function DashboardPage() {
                                         {row.currentPrice != null
                                             ? formatMoney(row.currentPrice, baseCurrency)
                                             : formatMoney(row.averagePurchasePrice, baseCurrency)}
-                                        {row.priceStatus === 'DEMO' && (
-                                            <span className="price-status-demo"> demo</span>
-                                        )}
                                     </td>
                                     <td className="value-cell">
                                         {row.marketValue != null
                                             ? formatMoney(row.marketValue, baseCurrency)
                                             : '—'}
+                                    </td>
+                                    <td>
+                                        <span
+                                            className={`price-status-badge price-status-${row.priceStatus.toLowerCase()}`}>
+                                            {getPriceStatusLabel(row.priceStatus)}
+                                        </span>
                                     </td>
                                 </tr>
                             ))}

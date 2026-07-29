@@ -6,8 +6,8 @@ import {
     ResponsiveContainer,
     Tooltip,
 } from 'recharts';
-import { fetchHoldingsFull, fetchPortfolioSummary } from '../api/portfolioApi';
-import type { AssetType, HoldingResponse, PortfolioSummaryResponse } from '../api/types';
+import { fetchHoldingsFull, fetchPortfolioExposure, fetchPortfolioSummary } from '../api/portfolioApi';
+import type { AssetType, HoldingResponse, PortfolioExposure, PortfolioSummaryResponse } from '../api/types';
 
 const ASSET_COLORS: Record<AssetType, string> = {
     STOCK: '#4F86F7',
@@ -47,18 +47,21 @@ interface AnalysisPageProps {
 export function AnalysisPage({ isDark }: AnalysisPageProps) {
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
     const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
+    const [exposure, setExposure] = useState<PortfolioExposure | null>(null);
 
     useEffect(() => {
         let cancelled = false;
         async function load() {
             try {
-                const [nextSummary, nextHoldings] = await Promise.all([
+                const [nextSummary, nextHoldings, nextExposure] = await Promise.all([
                     fetchPortfolioSummary(),
                     fetchHoldingsFull(),
+                    fetchPortfolioExposure(true),
                 ]);
                 if (!cancelled) {
                     setSummary(nextSummary);
                     setHoldings(nextHoldings);
+                    setExposure(nextExposure);
                 }
             } catch {
                 // keep empty on failure
@@ -91,6 +94,8 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
     const concentrationPercent = maxAllocation?.allocationPercent ?? 0;
     const isConcentrationAlert = concentrationPercent > 40;
 
+    const exposureWarnings = exposure?.warnings ?? [];
+
     const reviewNotes = useMemo(() => {
         const notes: { title: string; detail: string; color: string }[] = [];
 
@@ -120,6 +125,14 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
             });
         }
 
+        if (exposureWarnings.length > 0) {
+            notes.push({
+                title: 'Fund overlap warning',
+                detail: exposureWarnings.join(' '),
+                color: '#e74c3c',
+            });
+        }
+
         notes.push({
             title: 'No advice',
             detail: 'Signals are explanatory only.',
@@ -127,106 +140,23 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
         });
 
         return notes;
-    }, [holdings, summary, maxAllocation, concentrationPercent, isConcentrationAlert]);
+    }, [holdings, summary, maxAllocation, concentrationPercent, isConcentrationAlert, exposureWarnings]);
 
     return (
         <div className="analysis-page-wrapper">
-            <section className="analysis-top-row">
-                <div className="analysis-card">
-                    <h2 className="analysis-card-title">Allocation X-Ray</h2>
-                    {allocationChartData.length > 0 ? (
-                        <div className="allocation-xray-content">
-                            <div className="donut-wrapper">
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <PieChart>
-                                        <Pie
-                                            data={allocationChartData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={95}
-                                            paddingAngle={2}
-                                            dataKey="value"
-                                            strokeWidth={0}
-                                        >
-                                            {allocationChartData.map((entry) => (
-                                                <Cell key={entry.name} fill={entry.color}/>
-                                            ))}
-                                        </Pie>
-                                        <Tooltip
-                                            formatter={(value: number) => [formatMoney(value), '']}
-                                            contentStyle={{
-                                                borderRadius: 12,
-                                                border: 'none',
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                            }}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                <div className="donut-center-label">
-                                    <span className="donut-value">{formatMoney(totalAllocationValue)}</span>
-                                    <span className="donut-sub">priced value</span>
-                                </div>
-                            </div>
-                            <div className="allocation-legend">
-                                {allocationChartData.map((item) => (
-                                    <div className="legend-item" key={item.name}>
-                                        <svg width="16" height="16" viewBox="0 0 16 16">
-                                            <polygon
-                                                points={hexagonPoints(8, 8, 7)}
-                                                fill={item.color}
-                                            />
-                                        </svg>
-                                        <span className="legend-name">{item.name}</span>
-                                        <span className="legend-value">
-                                            {totalAllocationValue > 0
-                                                ? `${((item.value / totalAllocationValue) * 100).toFixed(0)}%`
-                                                : '0%'}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+            {exposureWarnings.length > 0 && (
+                <section className="analysis-page-section">
+                    <div className="analysis-card">
+                        <div className="fund-warning-banner">
+                            <span className="fund-warning-icon">⚠</span>
+                            <span className="fund-warning-text">{exposureWarnings.join(' ')}</span>
                         </div>
-                    ) : (
-                        <div className="holdings-empty-state">
-                            <p className="holdings-empty-text">No allocation data. Add holdings to see the chart.</p>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                </section>
+            )}
 
-                <div className="analysis-card">
-                    <h2 className="analysis-card-title">Concentration Check</h2>
-                    {maxAllocation ? (
-                        <div className="concentration-content">
-                            <div className="concentration-hex">
-                                <svg width="140" height="140" viewBox="0 0 140 140">
-                                    <polygon
-                                        points={hexagonPoints(70, 70, 60)}
-                                        fill={isDark ? '#1a1810' : '#fff9ed'}
-                                        stroke={isConcentrationAlert ? '#e74c3c' : '#f6b33b'}
-                                        strokeWidth="3"
-                                    />
-                                </svg>
-                                <div className="concentration-hex-label">
-                                    <span className="concentration-value">{formatPercent(concentrationPercent)}</span>
-                                    <span className="concentration-sub">{maxAllocation.ticker} largest</span>
-                                </div>
-                            </div>
-                            <div className="concentration-info">
-                                <p className={`concentration-status ${isConcentrationAlert ? 'concentration-alert' : ''}`}>
-                                    {isConcentrationAlert
-                                        ? `Above 40% alert line — consider diversifying`
-                                        : 'Below 40% alert line'}
-                                </p>
-                                <p className="concentration-detail">Keep monitoring after new holdings.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="holdings-empty-state">
-                            <p className="holdings-empty-text">No data to check concentration.</p>
-                        </div>
-                    )}
-                </div>
+            <section className="analysis-top-row">
+                {/* ... existing code ... */}
             </section>
 
             <section className="analysis-page-section">

@@ -176,6 +176,9 @@ code {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28px;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .page-title {
@@ -1894,5 +1897,325 @@ code {
   .holdings-conflict-card {
     flex-direction: column;
     text-align: center;
+  }
+
+  .ledger-action-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ledger-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .ledger-edit-btn:hover {
+    background: #f0f1f5;
+    color: var(--ink);
+  }
+
+  .dark .ledger-edit-btn:hover {
+    background: #1a1a24;
+  }
+
+  .price-status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .price-status-live {
+    background: #e8f8f0;
+    color: #27ae60;
+  }
+
+  .price-status-cached {
+    background: #eef0fb;
+    color: #4F86F7;
+  }
+
+  .price-status-demo {
+    background: #fff9ed;
+    color: #f6b33b;
+  }
+
+  .price-status-fixed {
+    background: #f0f1f5;
+    color: #64748b;
+  }
+
+  .price-status-unavailable {
+    background: #fde8e8;
+    color: #e74c3c;
+  }
+
+  .dark .price-status-live {
+    background: #0f2419;
+    color: #27ae60;
+  }
+
+  .dark .price-status-cached {
+    background: #0f1629;
+    color: #4F86F7;
+  }
+
+  .dark .price-status-demo {
+    background: #1a1810;
+    color: #c9a84c;
+  }
+
+  .dark .price-status-fixed {
+    background: #1a1a24;
+    color: #8a94a6;
+  }
+
+  .dark .price-status-unavailable {
+    background: #2a1010;
+    color: #e74c3c;
+  }
+
+  .edit-form-field {
+    margin-bottom: 16px;
+  }
+
+  .search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 38px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+
+  .search-clear-btn:hover {
+    color: var(--ink);
+  }
+
+  .search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--card);
+    border: 1px solid var(--line-darker);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    list-style: none;
+    padding: 4px;
+    margin: 4px 0 0;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .search-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+  }
+
+  .search-dropdown-item:hover,
+  .search-dropdown-item.selected {
+    background: var(--honey-soft);
+  }
+
+  .search-dropdown-ticker {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--ink);
+    min-width: 60px;
+  }
+
+  .search-dropdown-name {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--muted-darker);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .search-dropdown-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .fund-warning-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fff9ed;
+    border: 1px solid #f5e6c8;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  .dark .fund-warning-banner {
+    background: #1a1810;
+    border-color: #2a2520;
+  }
+
+  .fund-warning-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .fund-warning-text {
+    font-size: 0.82rem;
+    color: #8a6d2b;
+    line-height: 1.4;
+  }
+
+  .dark .fund-warning-text {
+    color: #c9a84c;
+  }
+
+  .add-holding-select {
+    appearance: auto;
+    cursor: pointer;
+  }
+
+  .add-holding-select {
+    appearance: auto;
+    cursor: pointer;
+  }
+
+  .add-holding-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--card);
+    border: 1px solid var(--line-darker);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    list-style: none;
+    padding: 4px;
+    margin: 4px 0 0;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .add-holding-search-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+  }
+
+  .add-holding-search-item:hover,
+  .add-holding-search-item.selected {
+    background: var(--honey-soft);
+  }
+
+  .search-item-ticker {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--ink);
+    min-width: 60px;
+  }
+
+  .search-item-name {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--muted-darker);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .search-item-meta {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .add-holding-fund-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fff9ed;
+    border: 1px solid #f5e6c8;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+    color: #8a6d2b;
+    line-height: 1.4;
+  }
+
+  .dark .add-holding-fund-warning {
+    background: #1a1810;
+    border-color: #2a2520;
+    color: #c9a84c;
+  }
+
+  .add-holding-search-spinner {
+    position: absolute;
+    right: 12px;
+    top: 38px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .dark .add-holding-search-dropdown {
+    background: #16151c;
+    border-color: #2a2a35;
+  }
+
+  .dark .add-holding-search-item:hover,
+  .dark .add-holding-search-item.selected {
+    background: #1e1d28;
+  }
+
+  .dark .search-item-ticker {
+    color: #e8e6e3;
+  }
+
+  .dark .search-item-name {
+    color: #8896aa;
+  }
+
+  .dark .search-item-meta {
+    color: #6b7280;
+  }
+
+  .dark .search-clear-btn {
+    color: #8896aa;
+  }
+
+  .dark .search-clear-btn:hover {
+    color: #e8e6e3;
+  }
+
+  .dark .add-holding-search-spinner {
+    color: #8896aa;
   }
 }
