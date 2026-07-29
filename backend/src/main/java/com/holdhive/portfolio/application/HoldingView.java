@@ -8,6 +8,7 @@ import com.holdhive.pricing.domain.PriceStatus;
 
 public record HoldingView(
     Long id,
+    Long instrumentId,
     String ticker,
     String exchangeCode,
     String displayName,

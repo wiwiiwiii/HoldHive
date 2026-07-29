@@ -89,6 +89,43 @@ class HoldingControllerTest {
     }
 
     @Test
+    void exposesInstrumentIdForFundLookthroughNavigation() throws Exception {
+        long holdingId = createHolding("""
+            {
+              "assetType": "ETF",
+              "ticker": "voo",
+              "exchangeCode": "NYSE",
+              "providerQuoteId": "105.VOO",
+              "quantity": 2,
+              "averagePurchasePrice": 460
+            }
+            """);
+
+        String responseBody = mockMvc.perform(get("/api/v1/holdings/{holdingId}", holdingId)
+                .param("priceMode", "DEMO_ALLOWED"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(holdingId))
+            .andExpect(jsonPath("$.instrumentId", notNullValue()))
+            .andExpect(jsonPath("$.assetType").value("ETF"))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+        long instrumentId = objectMapper.readTree(responseBody).get("instrumentId").asLong();
+
+        mockMvc.perform(get("/api/v1/funds/{instrumentId}/lookthrough", instrumentId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.fundInstrumentId").value(instrumentId))
+            .andExpect(jsonPath("$.ticker").value("VOO"));
+
+        mockMvc.perform(get("/api/v1/holdings")
+                .param("priceMode", "DEMO_ALLOWED"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].id").value(holdingId))
+            .andExpect(jsonPath("$.items[0].instrumentId").value(instrumentId));
+    }
+
+    @Test
     void storesFixedValueAssetsWithFixedPriceConventions() throws Exception {
         long holdingId = createHolding("""
             {

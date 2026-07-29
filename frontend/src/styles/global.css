@@ -236,6 +236,11 @@ code {
 }
 
 /* ===== 6. Metric Cards ===== */
+.dashboard-page-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
 .metric-cards-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -927,6 +932,11 @@ code {
 }
 
 /* ===== 12. Performance Page ===== */
+.performance-page-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
 .performance-page-section {
   margin-bottom: 24px;
 }
@@ -937,8 +947,6 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
-  max-width: 1000px;
-  margin: 0 auto;
 }
 
 .performance-chart-title {
@@ -958,8 +966,6 @@ code {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  max-width: 1000px;
-  margin: 0 auto;
 }
 
 .performance-insight-card {
@@ -990,6 +996,11 @@ code {
 }
 
 /* ===== 13. Analysis Page ===== */
+.analysis-page-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
 .analysis-page-section {
   margin-bottom: 24px;
 }
@@ -999,9 +1010,6 @@ code {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 24px;
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .analysis-card {
@@ -1010,8 +1018,6 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
-  max-width: 1000px;
-  margin: 0 auto 24px;
 }
 
 .analysis-card-title {
@@ -1160,8 +1166,14 @@ code {
 }
 
 /* ===== 14. Settings Page ===== */
+.settings-page-wrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
 .settings-page-section {
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .settings-card {
@@ -1170,8 +1182,7 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .settings-card-wide {
@@ -1253,8 +1264,7 @@ code {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .data-mode-buttons {

@@ -23,17 +23,17 @@ export function SettingsPage({ isDark, onThemeChange }: SettingsPageProps) {
     };
 
     return (
-        <>
+        <div className="settings-page-wrapper">
             <section className="settings-page-section">
                 <div className="settings-card settings-card-wide">
                     <h2 className="settings-card-title">Theme system</h2>
                     <p className="settings-card-subtitle">Logo variants switch with the theme.</p>
                     <div className="theme-preview-row">
                         <div className={`theme-logo-preview ${theme === 'day' ? 'active' : ''}`}>
-                            <img src="/FullLogoWhite.png" alt="HoldHive Light" className="theme-logo-img" />
+                            <img src="/FullLogoWhite.png" alt="HoldHive Light" className="theme-logo-img"/>
                         </div>
                         <div className={`theme-logo-preview dark ${theme === 'night' ? 'active' : ''}`}>
-                            <img src="/FullLogoBlack.png" alt="HoldHive Dark" className="theme-logo-img" />
+                            <img src="/FullLogoBlack.png" alt="HoldHive Dark" className="theme-logo-img"/>
                         </div>
                         <div className="theme-toggle-group">
                             <button
@@ -79,6 +79,6 @@ export function SettingsPage({ isDark, onThemeChange }: SettingsPageProps) {
                     </ul>
                 </div>
             </section>
-        </>
+        </div>
     );
 }

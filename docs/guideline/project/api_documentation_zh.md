@@ -38,7 +38,7 @@ MVP 支持六类可展示资产：
 | `CASH` | 现金余额，例如 `USD` | 以组合基准币种固定按 `1.00000000` 估值 |
 | `BANK_DEPOSIT` | 银行存款，例如活期或定期存款本金 | 以组合基准币种固定按 `1.00000000` 估值 |
 
-本期不支持债券、基金穿透、基金申赎流水、存款利息自动计提、现金流水、链上钱包、交易所账户同步或多币种汇率换算。
+本期不支持债券、基金申赎流水、存款利息自动计提、现金流水、链上钱包、交易所账户同步或多币种汇率换算。
 
 ### 2.4 数据状态
 
@@ -92,6 +92,7 @@ MVP 支持六类可展示资产：
 ```json
 {
   "id": 101,
+  "instrumentId": 201,
   "ticker": "AAPL",
   "exchangeCode": "NASDAQ",
   "displayName": "Apple Inc.",
@@ -113,6 +114,8 @@ MVP 支持六类可展示资产：
   "updatedAt": "2026-07-24T08:00:00Z"
 }
 ```
+
+`id` 是持仓记录 ID，用于 `GET/PATCH/DELETE /api/v1/holdings/{holdingId}`。`instrumentId` 是证券主数据 ID，用于 `GET /api/v1/funds/{instrumentId}/lookthrough` 等按证券维度查询的接口。前端不得用 `holdingId` 代替 `instrumentId`。
 
 当价格不可用时，`currentPrice`、`marketValue`、`unrealizedGainLoss`、`unrealizedGainLossPercent`、`allocationPercent` 和 `priceObservedAt` 为 `null`，`priceStatus` 为 `UNAVAILABLE`。`CASH` 和 `BANK_DEPOSIT` 不请求外部行情，`currentPrice` 固定为 `1.00000000`，`priceStatus` 为 `FIXED`。
 
@@ -180,6 +183,7 @@ GET /api/v1/holdings
   "items": [
     {
       "id": 101,
+      "instrumentId": 201,
       "ticker": "AAPL",
       "exchangeCode": "NASDAQ",
       "displayName": "Apple Inc.",

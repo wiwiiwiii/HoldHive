@@ -130,7 +130,7 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
     }, [holdings, summary, maxAllocation, concentrationPercent, isConcentrationAlert]);
 
     return (
-        <>
+        <div className="analysis-page-wrapper">
             <section className="analysis-top-row">
                 <div className="analysis-card">
                     <h2 className="analysis-card-title">Allocation X-Ray</h2>
@@ -150,7 +150,7 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                                             strokeWidth={0}
                                         >
                                             {allocationChartData.map((entry) => (
-                                                <Cell key={entry.name} fill={entry.color} />
+                                                <Cell key={entry.name} fill={entry.color}/>
                                             ))}
                                         </Pie>
                                         <Tooltip
@@ -252,6 +252,6 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                     </div>
                 </div>
             </section>
-        </>
+        </div>
     );
 }
