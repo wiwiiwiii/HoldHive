@@ -32,7 +32,7 @@
 | [AKTools HTTP](https://akshare.akfamily.xyz/deploy_http.html) | 将 AKShare 封装成本地 HTTP API | **P2 可选**，仅在团队接受额外 Python 服务时使用 | 依赖 AKTools、AKShare、FastAPI、Uvicorn、Typer；增加联调与启动复杂度 |
 | [Alpha Vantage Free API](https://www.alphavantage.co/support/) | 美股等，需 key | **不推荐主链路** | 免费仅 25/day，不满足联调刷新 |
 | [Finnhub Stock Quote API](https://finnhub.io/docs/api/quote) | 美股、部分全球市场，需 token | **长期备选**，接口简单 | 超出套餐会 429，另有 30 calls/second 上限；免费额度需以账号页为准 |
-| [CoinGecko Simple Price](https://docs.coingecko.com/reference/simple-price) | BTC、ETH 等主流加密资产 | **P1 推荐加密资产源**，MVP 先用 demo/cache price | Demo 免费计划可用，但有分钟和月度额度；必须缓存 |
+| [CoinGecko Simple Price](https://docs.coingecko.com/reference/simple-price) | BTC、ETH 等主流加密资产 | **已接入为加密资产主路径**，失败后走缓存/demo | Demo 免费计划可用，但有分钟和月度额度；必须缓存 |
 | [Binance public market data](https://developers.binance.info/docs/binance-spot-api-docs/rest-api/market-data-endpoints) | 交易所现货交易对，例如 `BTCUSDT` | **P1 备选**，接口简单 | 受地区和交易所服务可用性影响；只做价格展示，不做交易 |
 | [Coinbase Exchange ticker](https://docs.cdp.coinbase.com/api-reference/exchange-api/rest-api/products/get-product-ticker) | 交易所产品，例如 `BTC-USD` | **P1 备选** | 公共端点按 IP 限流；适合少量展示，不做高频刷新 |
 | Yahoo Chart / Quote 网页接口 | 美股等 | **不作为默认源** | 本机实测返回 `Too Many Requests`，不满足稳定联调要求 |
@@ -44,7 +44,7 @@
 | `STOCK` | 东方财富主链路，腾讯/新浪 A 股 fallback，Tiingo/Finnhub 作为官方备选 | 当前实时行情工作的主要范围 |
 | `ETF` | 与股票同链路处理 | ETF 像股票一样交易，有 ticker 和价格 |
 | `MUTUAL_FUND` | MVP 使用演示/缓存净值；P1 接入基金净值与持仓披露 | 场外基金没有盘中股票式报价，穿透数据只用于分析 |
-| `CRYPTO` | 先使用 demo/cache price；实时加密行情接口为 P1 | 支持 BTC/ETH 展示和估值，不接钱包或交易所账户 |
+| `CRYPTO` | CoinGecko 实时价格 -> 有效缓存 -> demo/unavailable | 支持 BTC/ETH 展示和估值，不接钱包或交易所账户 |
 | `CASH` | 后端固定价格 `1.00000000`，`priceStatus = FIXED` | 不请求任何外部 API，不写价格快照 |
 | `BANK_DEPOSIT` | 后端固定价格 `1.00000000`，`priceStatus = FIXED` | 按本金纳入组合总值；利息和到期收益后续扩展 |
 
@@ -232,9 +232,9 @@ AKTOOLS_BASE_URL=http://127.0.0.1:8081
 
 ### 5.5 加密资产行情
 
-MVP 对 `CRYPTO` 的默认实现是演示价格或缓存价格，不把实时加密行情作为 P0 阻塞项。原因是加密行情虽然接口多，但会引入 symbol 映射、交易对选择、匿名限流和地区可用性问题；两天编码期内更重要的是先让多资产模型、估值和 UI 稳定。
+当前后端已为 `CRYPTO:BTC` 和 `CRYPTO:ETH` 接入 CoinGecko Simple Price，并保留缓存和 demo fallback。加密资产仍不接钱包、交易所账户或链上流水，只把外部价格转换成统一 `MarketQuote`。
 
-如果 P0 已完成，可按以下顺序接入：
+如果后续扩展更多币种，可按以下顺序接入：
 
 1. **CoinGecko Simple Price**：按 coin id 查询，例如 `bitcoin`、`ethereum`；适合把 `BTC`、`ETH` 转成统一 USD 价格。
 2. **Binance public market data**：按交易对查询，例如 `BTCUSDT`；适合熟悉交易所 symbol 的团队，但要注意地区可用性。
@@ -293,7 +293,7 @@ GET /api/v1/market/search?query=AAPL
       "assetType": "STOCK"
     }
   ],
-  "source": "EASTMONEY",
+  "source": "MIXED",
   "cached": false
 }
 ```
@@ -308,26 +308,18 @@ GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=
 
 ```json
 {
-  "provider": "EASTMONEY",
+  "provider": "MIXED",
   "priceMode": "BEST_AVAILABLE",
   "quotes": [
     {
+      "provider": "EASTMONEY",
+      "providerQuoteId": "105.AAPL",
       "ticker": "AAPL",
       "displayName": "苹果",
-      "assetType": "STOCK",
-      "providerQuoteId": "105.AAPL",
       "currency": "USD",
       "currentPrice": 333.02000000,
-      "changeAmount": 11.36000000,
-      "changePercent": 3.53,
-      "openPrice": 321.79000000,
-      "previousClose": 321.66000000,
-      "dayHigh": 334.37000000,
-      "dayLow": 321.62000000,
-      "volume": 47489415,
       "priceStatus": "LIVE",
-      "priceObservedAt": "2026-07-25T00:00:00Z",
-      "fetchedAt": "2026-07-25T09:10:00Z"
+      "priceObservedAt": "2026-07-25T00:00:00Z"
     }
   ],
   "unavailable": []
@@ -369,19 +361,14 @@ BEST_AVAILABLE = fresh external quote
               -> UNAVAILABLE
 ```
 
-`CASH` 不进入以上链路，始终由后端返回固定估值。其他资产的任何降级都必须在响应中暴露 `priceStatus`、`provider`、`fetchedAt` 和 `priceObservedAt`。
+`CASH` 不进入以上链路，始终由后端返回固定估值。其他资产的任何降级都必须在响应中暴露 `priceStatus`、`provider` 和 `priceObservedAt`。
 
 ## 8. 配置建议
 
 ```text
-MARKET_PROVIDER=EASTMONEY
-MARKET_FALLBACK_PROVIDERS=TENCENT,SINA,DEMO
-MARKET_CACHE_TTL_SECONDS=45
-MARKET_SEARCH_CACHE_TTL_SECONDS=1800
-MARKET_REQUEST_TIMEOUT_MS=2500
-MARKET_RATE_LIMIT_PER_SECOND=1
-MARKET_DEMO_ALLOWED=true
-MARKET_CRYPTO_MODE=DEMO
+HOLDHIVE_MARKET_EXTERNAL_ENABLED=true
+HOLDHIVE_MARKET_CACHE_TTL=60s
+HOLDHIVE_MARKET_HTTP_TIMEOUT=3s
 ```
 
 如果使用官方 token 接口：
@@ -402,7 +389,7 @@ FINNHUB_TOKEN=<team-token-if-used>
 
 - 东方财富正常返回 A 股、美股报价时能转换成统一 DTO。
 - ETF 报价按股票链路转换，assetType 保持 `ETF`。
-- 加密资产在 demo/cache 模式下可估值，且状态不是伪造的 `LIVE`。
+- 加密资产在 live/cache/demo 模式下可估值，且状态分别返回 `LIVE`、`CACHED` 或 `DEMO`，不得伪造实时价格。
 - 现金不触发外部行情请求，固定返回 `priceStatus = FIXED`。
 - 单只证券价格为 `-`、空或缺字段时返回 `UNAVAILABLE`。
 - Provider 超时或返回非 JSON 时，服务不崩溃，并按降级顺序返回缓存或不可用状态。

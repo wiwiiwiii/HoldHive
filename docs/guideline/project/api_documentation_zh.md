@@ -288,7 +288,42 @@ Location: /api/v1/holdings/101
 - `400 VALIDATION_FAILED`
 - `409 HOLDING_ALREADY_EXISTS`
 
-### 4.4 删除持仓
+### 4.4 修改持仓数量和平均成本
+
+```http
+PATCH /api/v1/holdings/{holdingId}?priceMode=DEMO_ALLOWED
+Content-Type: application/json
+```
+
+请求：
+
+```json
+{
+  "quantity": 8.00000000,
+  "averagePurchasePrice": 320.00000000
+}
+```
+
+可选查询参数：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `priceMode` | `BEST_AVAILABLE` | 控制响应体估值口径；本地演示价格使用 `DEMO_ALLOWED` |
+
+规则：
+
+- 只修改持仓的 `quantity` 和 `averagePurchasePrice`，不改变 `assetType`、`ticker`、`exchangeCode` 或 `providerQuoteId`。
+- `quantity` 必填且大于 0。
+- `averagePurchasePrice` 必填且大于等于 0。
+- `CASH` 和 `BANK_DEPOSIT` 始终保持 `averagePurchasePrice = 1.00000000`，即使请求里提交了其他值。
+- 成功响应为更新后的 `Holding`，并按请求的 `priceMode` 返回 `currentPrice`、`marketValue`、`priceStatus` 等估值字段。
+
+失败：
+
+- `400 VALIDATION_FAILED`
+- `404 HOLDING_NOT_FOUND`
+
+### 4.5 删除持仓
 
 ```http
 DELETE /api/v1/holdings/{holdingId}
@@ -299,7 +334,7 @@ DELETE /api/v1/holdings/{holdingId}
 
 重复删除返回 `404`，客户端可以据此刷新本地列表。删除持仓不会删除证券主数据或价格历史。
 
-### 4.5 查询组合摘要
+### 4.6 查询组合摘要
 
 ```http
 GET /api/v1/portfolio/summary
@@ -315,7 +350,7 @@ GET /api/v1/portfolio/summary
 
 即使部分价格不可用也返回 `200` 和 `valuationStatus = PARTIAL`，因为持仓和部分估值仍可使用。只有调用方明确要求 `LIVE_ONLY` 且实时价格服务整体不可用时，才返回 `503 PRICE_SERVICE_UNAVAILABLE`。
 
-### 4.6 搜索证券
+### 4.7 搜索证券
 
 ```http
 GET /api/v1/market/search?query=AAPL
@@ -345,14 +380,14 @@ GET /api/v1/market/search?query=AAPL
       "assetType": "STOCK"
     }
   ],
-  "source": "EASTMONEY",
+  "source": "MIXED",
   "cached": false
 }
 ```
 
 搜索结果只用于辅助新增持仓。最终保存时，后端仍需重新校验 `providerQuoteId` 是否可报价。
 
-### 4.7 批量获取报价
+### 4.8 批量获取报价
 
 ```http
 GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=BEST_AVAILABLE
@@ -369,26 +404,18 @@ GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=
 
 ```json
 {
-  "provider": "EASTMONEY",
+  "provider": "MIXED",
   "priceMode": "BEST_AVAILABLE",
   "quotes": [
     {
+      "provider": "EASTMONEY",
+      "providerQuoteId": "105.AAPL",
       "ticker": "AAPL",
       "displayName": "苹果",
-      "assetType": "STOCK",
-      "providerQuoteId": "105.AAPL",
       "currency": "USD",
       "currentPrice": 333.02000000,
-      "changeAmount": 11.36000000,
-      "changePercent": 3.53,
-      "openPrice": 321.79000000,
-      "previousClose": 321.66000000,
-      "dayHigh": 334.37000000,
-      "dayLow": 321.62000000,
-      "volume": 47489415,
       "priceStatus": "LIVE",
-      "priceObservedAt": "2026-07-25T00:00:00Z",
-      "fetchedAt": "2026-07-25T09:10:00Z"
+      "priceObservedAt": "2026-07-25T00:00:00Z"
     }
   ],
   "unavailable": []
@@ -397,7 +424,87 @@ GET /api/v1/market/quotes?providerQuoteIds=1.600519,0.000001,105.AAPL&priceMode=
 
 `providerQuoteIds` 中某个标的不可用时，不应让整个响应失败；该项进入 `unavailable`，并在 portfolio summary 中体现为 `PARTIAL` 或 `UNAVAILABLE`。
 
-### 4.8 健康检查
+### 4.9 查询基金穿透
+
+```http
+GET /api/v1/funds/{instrumentId}/lookthrough
+```
+
+该接口用于解释 `ETF` 或 `MUTUAL_FUND` 的底层持仓。基金穿透只用于提示和分析，不改变基金本身的持仓数量、成本或估值。
+
+成功响应：`200 OK`
+
+```json
+{
+  "fundInstrumentId": 102,
+  "ticker": "VOO",
+  "displayName": "Vanguard S&P 500 ETF",
+  "assetType": "ETF",
+  "asOfDate": "2026-06-30",
+  "source": "DEMO_DISCLOSURE",
+  "coveragePercent": 41.15000000,
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "displayName": "Apple Inc.",
+      "assetType": "STOCK",
+      "weightPercent": 7.12000000
+    }
+  ],
+  "warnings": [
+    "Fund holdings are based on the latest available disclosure and may lag current positions."
+  ]
+}
+```
+
+- 已知演示基金按 ticker 返回披露样例。
+- 真实数据库中的基金 instrument id 也可查询；未知基金返回空持仓和 warning。
+- 非基金或不存在的 instrument 返回 `404 FUND_LOOKTHROUGH_NOT_FOUND`。
+
+### 4.10 查询组合穿透暴露
+
+```http
+GET /api/v1/portfolio/exposure?lookthrough=true&priceMode=DEMO_ALLOWED
+```
+
+可选查询参数：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `lookthrough` | `false` | `true` 时将基金披露持仓拆到底层资产，并保留未披露残余 |
+| `priceMode` | `BEST_AVAILABLE` | 与 holdings/summary 相同 |
+
+成功响应：`200 OK`
+
+```json
+{
+  "portfolioId": 1,
+  "portfolioName": "My Portfolio",
+  "baseCurrency": "USD",
+  "lookthrough": true,
+  "priceMode": "DEMO_ALLOWED",
+  "totalMarketValue": 2500.00000000,
+  "items": [
+    {
+      "ticker": "AAPL",
+      "displayName": "Apple Inc.",
+      "assetType": "STOCK",
+      "directMarketValue": 1500.00000000,
+      "fundLookthroughMarketValue": 100.00000000,
+      "totalExposureValue": 1600.00000000,
+      "exposurePercent": 64.00000000,
+      "sources": ["DIRECT", "FUND:VOO"]
+    }
+  ],
+  "warnings": [
+    "AAPL appears both as direct holding and inside fund holdings."
+  ]
+}
+```
+
+前端可用该接口在 Dashboard 或 Analysis 页面提示基金与直持股票重叠；不要在浏览器里自行拆分基金权重。
+
+### 4.11 健康检查
 
 ```http
 GET /api/v1/health
@@ -416,7 +523,7 @@ GET /api/v1/health
 
 该接口不得返回数据库连接串、凭据或内部网络地址。
 
-### 4.9 组合分析
+### 4.12 组合分析
 
 ```http
 POST /api/v1/portfolio/analysis
@@ -470,7 +577,7 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 
 ## 6. 一致性、缓存与失败处理
 
-- 创建和删除持仓成功后，前端重新获取 holdings 和 summary，不在客户端自行推算权威结果。
+- 创建、修改和删除持仓成功后，前端重新获取 holdings 和 summary，不在客户端自行推算权威结果。
 - 市场价格调用设置短超时，并通过适配器与核心持仓服务隔离。
 - `BEST_AVAILABLE` 顺序建议为：新鲜外部价格、有效缓存、明确允许的演示价格、不可用。
 - 演示价格永远返回 `priceStatus = DEMO`，页面必须可见地标注。
@@ -483,101 +590,27 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 
 | 方法与路径 | 用途 |
 | --- | --- |
-| `PATCH /api/v1/holdings/{id}` | 修改数量和平均成本，配合 `version` 乐观锁 |
 | `GET /api/v1/portfolios` | 多组合列表 |
 | `POST /api/v1/portfolios` | 创建组合 |
 | `GET /api/v1/portfolios/{id}/transactions` | 查询不可变交易流水 |
 | `POST /api/v1/portfolios/{id}/transactions` | 记录买入、卖出、股息等交易 |
 | `GET /api/v1/portfolios/{id}/performance` | 查询历史估值与表现 |
 | `GET /api/v1/portfolios/{id}/insights` | 获取规则型集中度或再平衡提示 |
-| `GET /api/v1/funds/{instrumentId}/lookthrough` | 查询基金底层持仓和权重，供用户理解基金中可能包含的股票 |
-| `GET /api/v1/portfolio/exposure?lookthrough=true` | 查询组合穿透后的资产/股票暴露，避免基金与直持股票被误解为完全独立 |
 | `POST /api/v1/portfolio/ai-analysis` | 最后阶段调用大模型生成组合解读，不作为买卖建议 |
 
 API 演进使用 `/api/v1` 保持兼容。新增可选字段属于兼容变更；删除字段、改变字段含义或收紧已有输入规则需要新版本或迁移期。
 
-### 7.1 基金穿透接口
+### 7.1 基金穿透展示规则
 
 基金本身也是一个投资组合，可能持有股票、债券、现金或其他基金。HoldHive 不能把基金简单当成普通股票处理后就结束；当用户添加 `ETF` 或 `MUTUAL_FUND` 时，前端应提示“基金可能包含股票，可能与已有直持股票形成重叠暴露”。穿透信息不得写进主持仓表，也不得改变基金本身的估值结果，它只用于解释和分析。
 
-```http
-GET /api/v1/funds/{instrumentId}/lookthrough
-```
+当前可用接口见 4.9 和 4.10。前端实现时遵守：
 
-成功响应：
-
-```json
-{
-  "fundInstrumentId": 102,
-  "ticker": "VOO",
-  "displayName": "Vanguard S&P 500 ETF",
-  "assetType": "ETF",
-  "asOfDate": "2026-06-30",
-  "source": "DEMO_DISCLOSURE",
-  "coveragePercent": 41.15000000,
-  "holdings": [
-    {
-      "ticker": "AAPL",
-      "displayName": "Apple Inc.",
-      "assetType": "STOCK",
-      "weightPercent": 7.12000000
-    },
-    {
-      "ticker": "MSFT",
-      "displayName": "Microsoft Corp.",
-      "assetType": "STOCK",
-      "weightPercent": 6.65000000
-    }
-  ],
-  "warnings": [
-    "Fund holdings are based on the latest available disclosure and may lag current positions."
-  ]
-}
-```
-
-```http
-GET /api/v1/portfolio/exposure?lookthrough=true
-```
-
-成功响应：
-
-```json
-{
-  "portfolioId": 1,
-  "lookthrough": true,
-  "asOfDate": "2026-06-30",
-  "directExposure": [
-    {
-      "ticker": "AAPL",
-      "assetType": "STOCK",
-      "marketValue": 2102.50000000,
-      "allocationPercent": 18.42000000
-    }
-  ],
-  "fundDerivedExposure": [
-    {
-      "ticker": "AAPL",
-      "assetType": "STOCK",
-      "marketValue": 208.86000000,
-      "allocationPercent": 1.83000000,
-      "sourceFundTicker": "VOO"
-    }
-  ],
-  "overlapWarnings": [
-    {
-      "ticker": "AAPL",
-      "message": "AAPL appears both as a direct holding and inside one or more funds."
-    }
-  ]
-}
-```
-
-接口边界：
-
-- P0 提供 demo lookthrough endpoint，至少支持本地演示基金；真实披露数据接入为 P1。
-- P1 可接入基金持仓披露数据，并缓存到独立的 fund lookthrough 表。
-- 穿透数据只用于展示和分析，不改变 `holding`、`price_snapshot` 或基金市值。
-- 穿透持仓通常有披露滞后，响应必须包含 `asOfDate` 和 `source`。
+- 新增或编辑 `ETF`、`MUTUAL_FUND` 时显示基金重叠风险提示。
+- Dashboard 或 Analysis 页面使用 `GET /api/v1/portfolio/exposure?lookthrough=true` 展示穿透暴露，不在浏览器里自行计算基金权重。
+- `sources` 包含 `DIRECT` 和 `FUND:{ticker}` 时，UI 应显示“直接持仓 + 基金内含”的合并含义。
+- `warnings` 直接展示为用户友好的提示；不要把基金披露缺失解释为接口失败。
+- 穿透数据通常有披露滞后，界面应展示 `source` 或 warning，不把它当作实时持仓。
 
 ### 7.2 大模型组合分析接口
 

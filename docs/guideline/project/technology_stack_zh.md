@@ -17,7 +17,7 @@ HoldHive 采用前后端分离的模块化单体架构。目标不是追求最�
 | 数字动画 | react-countup 或轻量自定义 hook | 总市值、盈亏和持仓数变化 |
 | 后端语言 | Java 21 LTS | REST API 与业务逻辑 |
 | 后端框架 | Spring Boot 3.x | Web、校验、数据访问和配置 |
-| 实时价格源 | 东方财富公共接口；Tiingo/Finnhub 为股票/ETF 备选；CoinGecko/Binance/Coinbase 为加密资产 P1 备选 | 股票、ETF、加密资产和现金估值 |
+| 实时价格源 | 东方财富公共接口；CoinGecko Simple Price；Tiingo/Finnhub 为股票/ETF 备选；Binance/Coinbase 为加密资产后备 | 股票、ETF、加密资产和现金估值 |
 | 构建工具 | Maven 3.9+ | 依赖、测试和打包 |
 | 数据库 | MySQL 8.4 LTS | 持仓、证券和价格快照 |
 | 数据访问 | Spring Data JPA / Hibernate | Repository 与实体映射 |
@@ -295,7 +295,7 @@ cd backend
 - 摘要组件正确展示完整、部分和空估值。
 - 添加表单拒绝非法 assetType、空 ticker、非正数量和负成本。
 - 现金类型显示固定估值提示，不调用外部行情。
-- 加密资产显示 demo/cache 标签，不把演示价格伪装为实时价格。
+- 加密资产显示 live/cache/demo 标签，不把缓存或演示价格伪装为实时价格。
 - 提交中按钮禁用，失败后保留输入。
 - 删除前显示确认，取消不调用 API，确认成功后刷新。
 - 价格状态为 `DEMO` 或 `UNAVAILABLE` 时出现明确标签。
@@ -384,7 +384,7 @@ feature/* 本地实现              feature/* 本地实现             qa 本地
 
 前端不需要等待后端完成才开始：
 
-1. Day 2 先冻结 `GET /holdings`、`POST /holdings`、`DELETE /holdings/{id}` 和 `GET /portfolio/summary` 的示例 JSON。
+1. Day 2 先冻结 `GET /holdings`、`POST /holdings`、`PATCH /holdings/{id}`、`DELETE /holdings/{id}` 和 `GET /portfolio/summary` 的示例 JSON。
 2. 前端依据相同 TypeScript DTO 使用 fixture/mock 数据完成 Dashboard、表单、空态和错误态。
 3. API 适配层集中在 `src/api`，组件不直接调用 `fetch` 或硬编码 URL。
 4. 后端 endpoint 合并到 `qa` 后，前端只替换 API 适配层的 mock 实现为真实调用，组件不应重写。
@@ -437,7 +437,7 @@ HH-02 创建持仓失败
 - [ ] 每人可在本机从零启动 MySQL、后端和前端，且不依赖他人电脑。
 - [ ] 新的 Flyway migration 可在空 MySQL 数据库成功执行。
 - [ ] mock 模式和真实 API 模式覆盖相同的关键页面状态。
-- [ ] 创建、查询、删除和部分价格失败在 `qa` 上均由前端 C 与 QA D 验证。
+- [ ] 创建、查询、修改、删除和部分价格失败在 `qa` 上均由前端 C 与 QA D 验证。
 - [ ] 每个已修复缺陷都有复现步骤、回归测试或明确的人工验收记录。
 
 ## 9. 本地开发与 CI

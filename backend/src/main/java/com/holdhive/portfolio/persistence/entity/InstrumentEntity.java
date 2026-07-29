@@ -116,6 +116,26 @@ public class InstrumentEntity {
         return currency;
     }
 
+    public void refreshMarketMetadata(
+        String displayName,
+        String provider,
+        String providerQuoteId,
+        String currency
+    ) {
+        if (displayName != null) {
+            this.displayName = displayName;
+        }
+        if (provider != null) {
+            this.provider = provider;
+        }
+        if (providerQuoteId != null) {
+            this.providerQuoteId = providerQuoteId;
+        }
+        if (currency != null) {
+            this.currency = currency;
+        }
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }

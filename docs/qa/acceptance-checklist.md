@@ -15,9 +15,11 @@ Use this checklist for `qa` branch validation.
 
 - [ ] Browse holdings
 - [ ] Add holding
+- [ ] Edit holding quantity and average purchase price
 - [ ] Delete holding
 - [ ] View portfolio summary
 - [ ] View allocation chart
+- [ ] View lookthrough exposure with direct + fund-derived values
 - [ ] See clear state when prices are demo, cached, or unavailable
 
 ### Asset Type Coverage
@@ -25,7 +27,7 @@ Use this checklist for `qa` branch validation.
 - [ ] Stock holding displays correctly
 - [ ] ETF holding displays correctly
 - [ ] Mutual fund holding displays correctly (and fund lookthrough works)
-- [ ] Crypto holding displays correctly
+- [ ] Crypto holding displays correctly with `CRYPTO:BTC` / `CRYPTO:ETH` quote behavior
 - [ ] Cash holding displays correctly
 - [ ] Bank deposit holding displays correctly
 
@@ -36,6 +38,8 @@ Use this checklist for `qa` branch validation.
 - [ ] Deleting a holding requires a confirmation step
 - [ ] Add-holding form validates required fields and rejects bad input (e.g. negative quantity)
 - [ ] Slow response or unavailable price shows a loading/unavailable indicator instead of hanging or crashing
+- [ ] Fund overlap warning appears when direct holdings also appear inside fund lookthrough
+- [ ] Unknown fund disclosure shows a warning, not a broken page
 
 ## Regression Checks
 

@@ -78,6 +78,7 @@ erDiagram
         decimal price
         char currency
         varchar provider
+        varchar status
         boolean is_demo
         datetime observed_at
         datetime created_at
@@ -149,6 +150,7 @@ MVP 启动时创建一个默认组合，例如 `My Portfolio`，但业务代码�
 | `price` | `DECIMAL(24,8)` | NOT NULL，`>= 0` | 市场价格 |
 | `currency` | `CHAR(3)` | NOT NULL | 报价币种 |
 | `provider` | `VARCHAR(64)` | NOT NULL | 数据提供方，例如 `SAMPLE_API` |
+| `status` | `VARCHAR(32)` | NOT NULL | 写入时的价格状态，例如 `LIVE`；兼容初始 migration |
 | `is_demo` | `BOOLEAN` | NOT NULL，默认 `FALSE` | 是否为演示价格 |
 | `observed_at` | `DATETIME(6)` | NOT NULL | 价格对应的 UTC 市场时间 |
 | `created_at` | `DATETIME(6)` | NOT NULL | UTC 系统写入时间 |
@@ -213,6 +215,7 @@ CREATE TABLE price_snapshot (
     price DECIMAL(24,8) NOT NULL,
     currency CHAR(3) NOT NULL,
     provider VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
     is_demo BOOLEAN NOT NULL DEFAULT FALSE,
     observed_at DATETIME(6) NOT NULL,
     created_at DATETIME(6) NOT NULL,

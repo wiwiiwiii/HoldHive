@@ -3,6 +3,7 @@ package com.holdhive.portfolio.api;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.holdhive.portfolio.domain.AssetType;
+import com.holdhive.portfolio.persistence.entity.InstrumentEntity;
+import com.holdhive.portfolio.persistence.repository.InstrumentRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,6 +35,9 @@ class HoldingControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private InstrumentRepository instrumentRepository;
 
     @Test
     void createsListsGetsAndDeletesStockHolding() throws Exception {
@@ -101,6 +108,169 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$.currentPrice").value(1.00000000))
             .andExpect(jsonPath("$.marketValue").value(4500.00000000))
             .andExpect(jsonPath("$.priceStatus").value("FIXED"));
+    }
+
+    @Test
+    void refreshesQuoteMetadataWhenCreatingHoldingForExistingInstrument() throws Exception {
+        instrumentRepository.saveAndFlush(new InstrumentEntity(
+            AssetType.STOCK,
+            "MSFT",
+            "NASDAQ",
+            "Microsoft Corp.",
+            null,
+            null,
+            "USD"
+        ));
+
+        long holdingId = createHolding("""
+            {
+              "assetType": "STOCK",
+              "ticker": "msft",
+              "exchangeCode": "nasdaq",
+              "providerQuoteId": "105.MSFT",
+              "quantity": 5,
+              "averagePurchasePrice": 300
+            }
+            """);
+
+        mockMvc.perform(get("/api/v1/holdings/{holdingId}", holdingId)
+                .param("priceMode", "DEMO_ALLOWED"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.provider").value("EASTMONEY"))
+            .andExpect(jsonPath("$.providerQuoteId").value("105.MSFT"))
+            .andExpect(jsonPath("$.currentPrice").value(330.00000000))
+            .andExpect(jsonPath("$.priceStatus").value("DEMO"));
+    }
+
+    @Test
+    void updatesHoldingQuantityAndAveragePurchasePrice() throws Exception {
+        long holdingId = createHolding("""
+            {
+              "assetType": "STOCK",
+              "ticker": "msft",
+              "exchangeCode": "nasdaq",
+              "providerQuoteId": "105.MSFT",
+              "quantity": 5,
+              "averagePurchasePrice": 300
+            }
+            """);
+
+        mockMvc.perform(patch("/api/v1/holdings/{holdingId}", holdingId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "quantity": 8,
+                      "averagePurchasePrice": 320
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(holdingId))
+            .andExpect(jsonPath("$.quantity").value(8.00000000))
+            .andExpect(jsonPath("$.averagePurchasePrice").value(320.00000000))
+            .andExpect(jsonPath("$.costBasis").value(2560.00000000));
+
+        mockMvc.perform(get("/api/v1/holdings/{holdingId}", holdingId)
+                .param("priceMode", "DEMO_ALLOWED"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.quantity").value(8.00000000))
+            .andExpect(jsonPath("$.averagePurchasePrice").value(320.00000000))
+            .andExpect(jsonPath("$.marketValue").value(2640.00000000));
+    }
+
+    @Test
+    void updatesHoldingUsingRequestedPriceModeForResponseValuation() throws Exception {
+        long holdingId = createHolding("""
+            {
+              "assetType": "STOCK",
+              "ticker": "aapl",
+              "exchangeCode": "nasdaq",
+              "providerQuoteId": "105.AAPL",
+              "quantity": 2,
+              "averagePurchasePrice": 175
+            }
+            """);
+
+        mockMvc.perform(patch("/api/v1/holdings/{holdingId}", holdingId)
+                .param("priceMode", "DEMO_ALLOWED")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "quantity": 3,
+                      "averagePurchasePrice": 180
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(holdingId))
+            .andExpect(jsonPath("$.quantity").value(3.00000000))
+            .andExpect(jsonPath("$.averagePurchasePrice").value(180.00000000))
+            .andExpect(jsonPath("$.currentPrice").value(210.25000000))
+            .andExpect(jsonPath("$.marketValue").value(630.75000000))
+            .andExpect(jsonPath("$.priceStatus").value("DEMO"));
+    }
+
+    @Test
+    void keepsFixedValueAssetAveragePurchasePriceAtOneWhenUpdating() throws Exception {
+        long holdingId = createHolding("""
+            {
+              "assetType": "BANK_DEPOSIT",
+              "ticker": "usd_deposit",
+              "quantity": 3000,
+              "averagePurchasePrice": 99
+            }
+            """);
+
+        mockMvc.perform(patch("/api/v1/holdings/{holdingId}", holdingId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "quantity": 3500,
+                      "averagePurchasePrice": 88
+                    }
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.ticker").value("USD_DEPOSIT"))
+            .andExpect(jsonPath("$.quantity").value(3500.00000000))
+            .andExpect(jsonPath("$.averagePurchasePrice").value(1.00000000))
+            .andExpect(jsonPath("$.currentPrice").value(1.00000000))
+            .andExpect(jsonPath("$.marketValue").value(3500.00000000))
+            .andExpect(jsonPath("$.priceStatus").value("FIXED"));
+    }
+
+    @Test
+    void rejectsInvalidHoldingUpdateRequests() throws Exception {
+        long holdingId = createHolding("""
+            {
+              "assetType": "STOCK",
+              "ticker": "aapl",
+              "exchangeCode": "nasdaq",
+              "providerQuoteId": "105.AAPL",
+              "quantity": 2,
+              "averagePurchasePrice": 175
+            }
+            """);
+
+        mockMvc.perform(patch("/api/v1/holdings/{holdingId}", holdingId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "quantity": -1,
+                      "averagePurchasePrice": 175
+                    }
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+            .andExpect(jsonPath("$.fieldErrors[0].field").value("quantity"));
+
+        mockMvc.perform(patch("/api/v1/holdings/{holdingId}", 999999)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "quantity": 1,
+                      "averagePurchasePrice": 1
+                    }
+                    """))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("HOLDING_NOT_FOUND"));
     }
 
     @Test

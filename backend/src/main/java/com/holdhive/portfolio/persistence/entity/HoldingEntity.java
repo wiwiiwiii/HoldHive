@@ -95,6 +95,14 @@ public class HoldingEntity {
         return averagePurchasePrice;
     }
 
+    public void updateQuantityAndAveragePurchasePrice(
+        BigDecimal quantity,
+        BigDecimal averagePurchasePrice
+    ) {
+        this.quantity = quantity;
+        this.averagePurchasePrice = averagePurchasePrice;
+    }
+
     public Long getVersion() {
         return version;
     }
