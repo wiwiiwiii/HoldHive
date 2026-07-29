@@ -23,3 +23,17 @@ management:
 springdoc:
   swagger-ui:
     path: /swagger-ui/index.html
+
+holdhive:
+  llm:
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    api-key: ${DEEPSEEK_API_KEY:}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}
+    timeout-ms: 15000
+  fund-holdings:
+    # mock: 固定 JSON fixture（默认，演示/测试可重复）
+    # eastmoney: 天天基金真实季度持仓（公共接口，无需 key；含申万行业名）
+    provider: ${FUND_HOLDINGS_PROVIDER:mock}
+    base-url: ${FUND_HOLDINGS_BASE_URL:https://fundmobapi.eastmoney.com}
+    timeout-ms: 3000
+    cache-ttl-hours: 24
