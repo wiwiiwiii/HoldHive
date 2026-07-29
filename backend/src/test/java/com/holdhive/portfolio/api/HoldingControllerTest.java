@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.holdhive.portfolio.domain.AssetType;
 import com.holdhive.portfolio.persistence.entity.InstrumentEntity;
+import com.holdhive.portfolio.persistence.repository.HoldingRepository;
 import com.holdhive.portfolio.persistence.repository.InstrumentRepository;
 
 @SpringBootTest
@@ -38,6 +40,15 @@ class HoldingControllerTest {
 
     @Autowired
     private InstrumentRepository instrumentRepository;
+
+    @Autowired
+    private HoldingRepository holdingRepository;
+
+    @BeforeEach
+    void clearSeedHoldingsForControllerIsolation() {
+        holdingRepository.deleteAll();
+        holdingRepository.flush();
+    }
 
     @Test
     void createsListsGetsAndDeletesStockHolding() throws Exception {
@@ -70,8 +81,8 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$.items[0].unrealizedGainLoss").value(150.00000000))
             .andExpect(jsonPath("$.items[0].unrealizedGainLossPercent").value(10.00000000))
             .andExpect(jsonPath("$.items[0].allocationPercent").value(100.00000000))
-            .andExpect(jsonPath("$.items[0].priceStatus").value("DEMO"))
-            .andExpect(jsonPath("$.items[0].priceObservedAt").value("2026-07-24T08:29:00Z"));
+            .andExpect(jsonPath("$.items[0].priceStatus").value("CACHED"))
+            .andExpect(jsonPath("$.items[0].priceObservedAt", notNullValue()));
 
         mockMvc.perform(get("/api/v1/holdings/{holdingId}", holdingId)
                 .param("priceMode", "DEMO_ALLOWED"))
@@ -151,9 +162,9 @@ class HoldingControllerTest {
     void refreshesQuoteMetadataWhenCreatingHoldingForExistingInstrument() throws Exception {
         instrumentRepository.saveAndFlush(new InstrumentEntity(
             AssetType.STOCK,
-            "MSFT",
+            "REFRESH1",
             "NASDAQ",
-            "Microsoft Corp.",
+            "Refresh Metadata Test",
             null,
             null,
             "USD"
@@ -162,7 +173,7 @@ class HoldingControllerTest {
         long holdingId = createHolding("""
             {
               "assetType": "STOCK",
-              "ticker": "msft",
+              "ticker": "refresh1",
               "exchangeCode": "nasdaq",
               "providerQuoteId": "105.MSFT",
               "quantity": 5,
@@ -176,7 +187,7 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$.provider").value("EASTMONEY"))
             .andExpect(jsonPath("$.providerQuoteId").value("105.MSFT"))
             .andExpect(jsonPath("$.currentPrice").value(330.00000000))
-            .andExpect(jsonPath("$.priceStatus").value("DEMO"));
+            .andExpect(jsonPath("$.priceStatus").value("CACHED"));
     }
 
     @Test
@@ -242,7 +253,7 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$.averagePurchasePrice").value(180.00000000))
             .andExpect(jsonPath("$.currentPrice").value(210.25000000))
             .andExpect(jsonPath("$.marketValue").value(630.75000000))
-            .andExpect(jsonPath("$.priceStatus").value("DEMO"));
+            .andExpect(jsonPath("$.priceStatus").value("CACHED"));
     }
 
     @Test

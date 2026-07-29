@@ -69,15 +69,19 @@ class PricingConfiguration {
     @Bean
     MarketQuoteProvider demoMarketQuoteProvider() {
         return new DemoPricingAdapter(
-            Map.of(
-                "105.AAPL", new BigDecimal("210.25"),
-                "105.MSFT", new BigDecimal("330.00"),
-                "105.VOO", new BigDecimal("510.40"),
-                "MF:FXAIX", new BigDecimal("205.35"),
-                "CRYPTO:BTC", new BigDecimal("67500.00"),
-                "CRYPTO:ETH", new BigDecimal("3650.00"),
-                "1.600519", new BigDecimal("1680.00"),
-                "0.000001", new BigDecimal("12.34")
+            Map.ofEntries(
+                Map.entry("105.AAPL", new BigDecimal("210.25")),
+                Map.entry("105.MSFT", new BigDecimal("330.00")),
+                Map.entry("105.NVDA", new BigDecimal("940.00")),
+                Map.entry("105.VOO", new BigDecimal("510.40")),
+                Map.entry("105.SPY", new BigDecimal("545.20")),
+                Map.entry("105.QQQ", new BigDecimal("485.75")),
+                Map.entry("MF:FXAIX", new BigDecimal("205.35")),
+                Map.entry("FUND:005827", new BigDecimal("2.11")),
+                Map.entry("CRYPTO:BTC", new BigDecimal("67500.00")),
+                Map.entry("CRYPTO:ETH", new BigDecimal("3650.00")),
+                Map.entry("1.600519", new BigDecimal("1680.00")),
+                Map.entry("0.000001", new BigDecimal("12.34"))
             ),
             Instant.parse("2026-07-24T08:29:00Z")
         );

@@ -9,5 +9,5 @@ spring:
 holdhive:
   market:
     external-enabled: ${HOLDHIVE_MARKET_EXTERNAL_ENABLED:true}
-    cache-ttl: ${HOLDHIVE_MARKET_CACHE_TTL:60s}
+    cache-ttl: ${HOLDHIVE_MARKET_CACHE_TTL:30d}
     http-timeout: ${HOLDHIVE_MARKET_HTTP_TIMEOUT:3s}
