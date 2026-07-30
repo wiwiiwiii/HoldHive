@@ -3,6 +3,7 @@ import { Trash2, Hexagon, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { fetchHoldingsFull, deleteHolding, updateHolding } from '../api/portfolioApi';
 import type { HoldingResponse, PriceMode } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const FILTERS = ['All', 'Priced', 'Unpriced', 'High gain'];
 
@@ -192,7 +193,11 @@ export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: Hold
 
                     {isLoading ? (
                         <div className="holdings-empty-state">
-                            <p className="holdings-empty-text">Loading holdings...</p>
+                            <ThinkingLoader
+                                compact
+                                label="Thinking through holdings"
+                                detail="Refreshing quantities, prices, and unrealized P/L."
+                            />
                         </div>
                     ) : filteredHoldings.length === 0 && !error ? (
                         <div className="holdings-empty-state">

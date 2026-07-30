@@ -13,6 +13,7 @@ import type {
     PortfolioExposure,
     AnalysisAssetType,
 } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const ASSET_COLORS: Record<string, string> = {
     STOCK: '#4F86F7',
@@ -328,6 +329,15 @@ export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) 
                     </button>
                 </div>
             </section>
+
+            {isLoading && !facts && (
+                <section className="analysis-page-section">
+                    <ThinkingLoader
+                        label="Thinking through portfolio risk"
+                        detail="Loading allocation, concentration, look-through exposure, and AI insight stream."
+                    />
+                </section>
+            )}
 
             {overlapWarnings.length > 0 && (
                 <section className="analysis-page-section">

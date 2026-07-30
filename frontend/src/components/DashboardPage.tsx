@@ -20,6 +20,7 @@ import type {
     PortfolioSummaryResponse,
     PriceStatus,
 } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const ASSET_COLORS: Record<AssetType, string> = {
     STOCK: '#4F86F7',
@@ -259,6 +260,15 @@ export function DashboardPage() {
                         <p className="metric-detail negative" role="alert">{error}</p>
                     </div>
                 </div>
+            )}
+
+            {isLoading && !summary && (
+                <section className="dashboard-loading-section">
+                    <ThinkingLoader
+                        label="Thinking through dashboard data"
+                        detail="Loading valuation, allocation, fund look-through, and pricing status."
+                    />
+                </section>
             )}
 
             <section className="metric-cards-row">

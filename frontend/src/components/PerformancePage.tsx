@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { fetchHoldingsFull, fetchPortfolioSummary } from '../api/portfolioApi';
 import type { HoldingResponse, PortfolioSummaryResponse } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -60,10 +61,12 @@ interface InsightCard {
 export function PerformancePage() {
     const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
         async function load() {
+            setIsLoading(true);
             try {
                 const [data, sum] = await Promise.all([fetchHoldingsFull(), fetchPortfolioSummary()]);
                 if (!cancelled) {
@@ -72,6 +75,10 @@ export function PerformancePage() {
                 }
             } catch {
                 // keep empty on failure
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         }
         load();
@@ -139,7 +146,12 @@ export function PerformancePage() {
                             : 'Add holdings to see your portfolio trend'}
                     </p>
                     <div className="performance-chart-wrapper">
-                        {chartData.length > 0 ? (
+                        {isLoading && !summary ? (
+                            <ThinkingLoader
+                                label="Thinking through performance"
+                                detail="Building the value trend and contributor snapshot."
+                            />
+                        ) : chartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <AreaChart data={chartData}>
                                     <defs>
