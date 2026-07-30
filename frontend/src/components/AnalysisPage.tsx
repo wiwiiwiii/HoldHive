@@ -6,16 +6,47 @@ import {
     ResponsiveContainer,
     Tooltip,
 } from 'recharts';
-import { fetchHoldingsFull, fetchPortfolioExposure, fetchPortfolioSummary } from '../api/portfolioApi';
-import type { AssetType, HoldingResponse, PortfolioExposure, PortfolioSummaryResponse } from '../api/types';
+import { fetchAnalysisInsightsFull, fetchPortfolioExposure } from '../api/portfolioApi';
+import type {
+    PortfolioAnalysisFacts,
+    PortfolioExposure,
+    AnalysisAssetType,
+} from '../api/types';
 
-const ASSET_COLORS: Record<AssetType, string> = {
+const ASSET_COLORS: Record<string, string> = {
     STOCK: '#4F86F7',
     ETF: '#9B59B6',
     MUTUAL_FUND: '#0f766e',
+    FUND: '#9B59B6',
     CRYPTO: '#f59e0b',
     CASH: '#F5A623',
     BANK_DEPOSIT: '#64748b',
+    TERM_DEPOSIT: '#64748b',
+    UNPRICED: '#BDC3C7',
+};
+
+const ASSET_LABELS: Record<string, string> = {
+    STOCK: 'Stocks',
+    ETF: 'ETF',
+    MUTUAL_FUND: 'Mutual Fund',
+    FUND: 'Fund',
+    CRYPTO: 'Crypto',
+    CASH: 'Cash',
+    BANK_DEPOSIT: 'Bank Deposit',
+    TERM_DEPOSIT: 'Term Deposit',
+    UNPRICED: 'Unpriced',
+};
+
+const RISK_LEVEL_LABELS: Record<string, string> = {
+    LOW: 'Low',
+    MEDIUM: 'Medium',
+    HIGH: 'High',
+};
+
+const RISK_LEVEL_COLORS: Record<string, string> = {
+    LOW: '#27ae60',
+    MEDIUM: '#f6b33b',
+    HIGH: '#e74c3c',
 };
 
 function hexagonPoints(cx: number, cy: number, r: number): string {
@@ -29,6 +60,17 @@ function hexagonPoints(cx: number, cy: number, r: number): string {
 }
 
 function formatMoney(value: number): string {
+    if (value >= 1000) {
+        return `$${(value / 1000).toFixed(1)}k`;
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2,
+    }).format(value);
+}
+
+function formatMoneyFull(value: number): string {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
@@ -45,92 +87,125 @@ interface AnalysisPageProps {
 }
 
 export function AnalysisPage({ isDark }: AnalysisPageProps) {
-    const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
-    const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
+    const [facts, setFacts] = useState<PortfolioAnalysisFacts | null>(null);
     const [exposure, setExposure] = useState<PortfolioExposure | null>(null);
+    const [aiText, setAiText] = useState('');
+    const [isAiStreaming, setIsAiStreaming] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
         async function load() {
+            setIsLoading(true);
+            setAiText('');
+            setIsAiStreaming(true);
             try {
-                const [nextSummary, nextHoldings, nextExposure] = await Promise.all([
-                    fetchPortfolioSummary(),
-                    fetchHoldingsFull(),
+                const [analysisFacts, nextExposure] = await Promise.all([
+                    fetchAnalysisInsightsFull((token) => {
+                        if (!cancelled) {
+                            setAiText((prev) => prev + token);
+                        }
+                    }),
                     fetchPortfolioExposure(true),
                 ]);
                 if (!cancelled) {
-                    setSummary(nextSummary);
-                    setHoldings(nextHoldings);
+                    setFacts(analysisFacts);
                     setExposure(nextExposure);
                 }
             } catch {
                 // keep empty on failure
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                    setIsAiStreaming(false);
+                }
             }
         }
         load();
         return () => { cancelled = true; };
     }, []);
 
-    const allocations = summary?.allocations ?? [];
+    const overview = facts?.overview;
+    const concentration = facts?.concentration;
+    const fundOverlap = facts?.fundOverlap;
+    const sectorExposure = facts?.sectorExposure;
+    const profitLoss = facts?.profitLoss;
 
-    const allocationChartData = useMemo(() => {
-        if (allocations.length === 0) return [];
-        return allocations.map((a) => ({
-            name: a.ticker,
+    const assetTypeData = useMemo(() => {
+        if (!overview || overview.allocations.length === 0) return [];
+        return overview.allocations.map((a) => ({
+            name: ASSET_LABELS[a.assetType] ?? a.assetType,
             value: a.marketValue,
+            percent: a.percent,
             color: ASSET_COLORS[a.assetType] ?? '#BDC3C7',
         }));
-    }, [allocations]);
+    }, [overview]);
 
-    const totalAllocationValue = allocationChartData.reduce((sum, d) => sum + d.value, 0);
+    const totalValue = overview?.totalMarketValue ?? 0;
 
-    const maxAllocation = useMemo(() => {
-        if (allocations.length === 0) return null;
-        return allocations.reduce((max, a) =>
-                a.allocationPercent > max.allocationPercent ? a : max
-            , allocations[0]);
-    }, [allocations]);
-
-    const concentrationPercent = maxAllocation?.allocationPercent ?? 0;
+    const maxHolding = concentration?.topHoldings?.[0] ?? null;
+    const concentrationPercent = maxHolding?.percentOfPortfolio ?? 0;
     const isConcentrationAlert = concentrationPercent > 40;
 
-    const exposureWarnings = exposure?.warnings ?? [];
+    const overlapWarnings = useMemo(() => {
+        const warnings: string[] = [];
+        if (fundOverlap) {
+            for (const fund of fundOverlap.funds) {
+                for (const stock of fund.overlapStocks) {
+                    warnings.push(`${stock.ticker} appears both as direct holding and inside ${fund.fundTicker} holdings.`);
+                }
+            }
+            for (const fund of fundOverlap.unavailableFunds) {
+                warnings.push(`No fund lookthrough disclosure is available for ${fund.fundTicker}.`);
+            }
+        }
+        return warnings;
+    }, [fundOverlap]);
 
     const reviewNotes = useMemo(() => {
         const notes: { title: string; detail: string; color: string }[] = [];
 
-        const demoCount = holdings.filter((h) => h.priceStatus === 'DEMO').length;
-        if (demoCount > 0) {
+        if (fundOverlap && fundOverlap.unavailableFunds.length > 0) {
             notes.push({
                 title: 'Price transparency',
-                detail: `${demoCount} holding${demoCount > 1 ? 's' : ''} use demo values.`,
+                detail: `${fundOverlap.unavailableFunds.length} fund${fundOverlap.unavailableFunds.length > 1 ? 's' : ''} use demo values.`,
                 color: '#f6b33b',
             });
         }
 
-        const unpricedCount = summary?.unpricedHoldings.length ?? 0;
-        if (unpricedCount > 0) {
+        if (profitLoss && profitLoss.missingCostBasisTickers.length > 0) {
             notes.push({
                 title: 'Unpriced holdings',
-                detail: `${unpricedCount} holding${unpricedCount > 1 ? 's' : ''} have no price.`,
+                detail: `${profitLoss.missingCostBasisTickers.length} holding${profitLoss.missingCostBasisTickers.length > 1 ? 's' : ''} have no price.`,
                 color: '#e74c3c',
             });
         }
 
-        if (maxAllocation && isConcentrationAlert) {
+        if (concentration && isConcentrationAlert && maxHolding) {
             notes.push({
-                title: `${maxAllocation.ticker} concentration`,
+                title: `${maxHolding.ticker} concentration`,
                 detail: `${formatPercent(concentrationPercent)} of priced value. Consider diversifying.`,
                 color: '#e74c3c',
             });
         }
 
-        if (exposureWarnings.length > 0) {
+        if (overlapWarnings.length > 0) {
             notes.push({
                 title: 'Fund overlap warning',
-                detail: exposureWarnings.join(' '),
+                detail: `${fundOverlap?.totalOverlapPercentOfPortfolio ? formatPercent(fundOverlap.totalOverlapPercentOfPortfolio * 100) : ''} of portfolio has overlapping exposure.`,
                 color: '#e74c3c',
             });
+        }
+
+        if (profitLoss) {
+            const cashAlloc = overview?.allocations.find((a) => a.assetType === 'CASH' || a.assetType === 'BANK_DEPOSIT');
+            if (cashAlloc && cashAlloc.percent > 20) {
+                notes.push({
+                    title: 'Diversification',
+                    detail: `Cash reserve is ${formatPercent(cashAlloc.percent * 100)} of priced value.`,
+                    color: '#4F86F7',
+                });
+            }
         }
 
         notes.push({
@@ -140,24 +215,276 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
         });
 
         return notes;
-    }, [holdings, summary, maxAllocation, concentrationPercent, isConcentrationAlert, exposureWarnings]);
+    }, [fundOverlap, profitLoss, concentration, maxHolding, concentrationPercent, isConcentrationAlert, overlapWarnings, overview]);
+
+    const sectorData = useMemo(() => {
+        if (!sectorExposure || sectorExposure.sectors.length === 0) return [];
+        return sectorExposure.sectors.map((s) => ({
+            name: s.sector,
+            value: s.effectiveMarketValue,
+            percent: s.effectivePercentOfPortfolio,
+        }));
+    }, [sectorExposure]);
+
+    const topSectors = sectorData.slice(0, 5);
+
+    const pnlSorted = useMemo(() => {
+        if (!profitLoss) return [];
+        return [...profitLoss.holdings].sort((a, b) => (b.unrealizedPnlPercent ?? 0) - (a.unrealizedPnlPercent ?? 0));
+    }, [profitLoss]);
 
     return (
         <div className="analysis-page-wrapper">
-            {exposureWarnings.length > 0 && (
+            {overlapWarnings.length > 0 && (
                 <section className="analysis-page-section">
                     <div className="analysis-card">
-                        <div className="fund-warning-banner">
-                            <span className="fund-warning-icon">⚠</span>
-                            <span className="fund-warning-text">{exposureWarnings.join(' ')}</span>
-                        </div>
+                        {overlapWarnings.map((w, i) => (
+                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0 }}>
+                                <span className="fund-warning-icon">⚠</span>
+                                <span className="fund-warning-text">{w}</span>
+                            </div>
+                        ))}
                     </div>
                 </section>
             )}
 
             <section className="analysis-top-row">
-                {/* ... existing code ... */}
+                <div className="analysis-card">
+                    <h2 className="analysis-card-title">Allocation X-Ray</h2>
+                    {assetTypeData.length > 0 ? (
+                        <div className="allocation-xray-content">
+                            <div className="donut-wrapper">
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <PieChart>
+                                        <Pie
+                                            data={assetTypeData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={100}
+                                            paddingAngle={2}
+                                            dataKey="value"
+                                            strokeWidth={0}
+                                        >
+                                            {assetTypeData.map((entry) => (
+                                                <Cell key={entry.name} fill={entry.color}/>
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value: number, name: string) => [
+                                                `${formatMoneyFull(value)} (${assetTypeData.find((d) => d.name === name)?.percent.toFixed(1)}%)`,
+                                                name,
+                                            ]}
+                                            contentStyle={{
+                                                borderRadius: 12,
+                                                border: 'none',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="donut-center-label">
+                                    <span className="donut-value">{formatMoney(totalValue)}</span>
+                                    <span className="donut-sub">priced value</span>
+                                </div>
+                            </div>
+                            <div className="allocation-legend">
+                                {assetTypeData.map((item) => (
+                                    <div className="legend-item" key={item.name}>
+                                        <span className="legend-dot" style={{
+                                            backgroundColor: item.color,
+                                            width: 12,
+                                            height: 12,
+                                            borderRadius: 3,
+                                            flexShrink: 0,
+                                        }}/>
+                                        <span className="legend-name">{item.name}</span>
+                                        <span className="legend-value">{formatPercent(item.percent)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="holdings-empty-state">
+                            <p className="holdings-empty-title">No allocation data</p>
+                            <p className="holdings-empty-text">Add holdings to see the allocation breakdown.</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="analysis-card">
+                    <h2 className="analysis-card-title">Concentration Check</h2>
+                    {maxHolding ? (
+                        <div className="concentration-content">
+                            <div className="concentration-hex">
+                                <svg width="140" height="140" viewBox="0 0 140 140">
+                                    <polygon
+                                        points={hexagonPoints(70, 70, 62)}
+                                        fill={isDark ? '#1a1810' : '#fff9ed'}
+                                        stroke={isConcentrationAlert ? '#e74c3c' : '#F5A623'}
+                                        strokeWidth="3"
+                                    />
+                                </svg>
+                                <div className="concentration-hex-label">
+                                    <span className="concentration-value">{formatPercent(concentrationPercent)}</span>
+                                    <span className="concentration-sub">largest holding</span>
+                                </div>
+                            </div>
+                            <div className="concentration-info">
+                                <p className="concentration-status"
+                                   style={{color: isConcentrationAlert ? '#e74c3c' : '#27ae60'}}>
+                                    {isConcentrationAlert ? 'Above 40% alert line' : 'Below 40% alert line'}
+                                </p>
+                                <p className="concentration-detail">
+                                    {isConcentrationAlert
+                                        ? `${maxHolding.ticker} is ${formatPercent(concentrationPercent)} of your portfolio. Consider diversifying.`
+                                        : `${maxHolding.ticker} at ${formatPercent(concentrationPercent)}. Keep monitoring after new holdings.`}
+                                </p>
+                                {concentration && (
+                                    <p className="concentration-detail" style={{marginTop: 8}}>
+                                        HHI: {concentration.hhi.toFixed(3)} · Risk: <span
+                                        style={{color: RISK_LEVEL_COLORS[concentration.riskLevel]}}>{RISK_LEVEL_LABELS[concentration.riskLevel]}</span>
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="holdings-empty-state">
+                            <p className="holdings-empty-title">No concentration data</p>
+                            <p className="holdings-empty-text">Add holdings to check concentration.</p>
+                        </div>
+                    )}
+                </div>
             </section>
+
+            {sectorExposure && sectorExposure.sectors.length > 0 && (
+                <section className="analysis-page-section">
+                    <div className="analysis-card">
+                        <h2 className="analysis-card-title">Sector Exposure</h2>
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24}}>
+                            <div>
+                                {topSectors.map((s) => (
+                                    <div key={s.name}
+                                         style={{display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12}}>
+                                        <div style={{
+                                            width: 80,
+                                            fontSize: '0.82rem',
+                                            color: 'var(--muted-darker)',
+                                            flexShrink: 0,
+                                        }}>{s.name}</div>
+                                        <div style={{
+                                            flex: 1,
+                                            height: 8,
+                                            background: 'var(--line)',
+                                            borderRadius: 4,
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{
+                                                width: `${Math.min(s.percent, 100)}%`,
+                                                height: '100%',
+                                                background: 'var(--honey)',
+                                                borderRadius: 4,
+                                            }}/>
+                                        </div>
+                                        <div style={{
+                                            width: 48,
+                                            textAlign: 'right',
+                                            fontSize: '0.82rem',
+                                            fontWeight: 600,
+                                            color: 'var(--ink)',
+                                        }}>{formatPercent(s.percent)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div>
+                                <p style={{fontSize: '0.82rem', color: 'var(--muted)', margin: '0 0 8px'}}>
+                                    Sector HHI: {sectorExposure.sectorHhi.toFixed(3)} ·{' '}
+                                    <span style={{color: RISK_LEVEL_COLORS[sectorExposure.sectorRiskLevel]}}>
+                                        {RISK_LEVEL_LABELS[sectorExposure.sectorRiskLevel]} risk
+                                    </span>
+                                </p>
+                                {sectorExposure.topSector && (
+                                    <p style={{fontSize: '0.82rem', color: 'var(--muted)', margin: 0}}>
+                                        Top
+                                        sector: {sectorExposure.topSector} ({formatPercent(sectorExposure.topSectorPercent)})
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {profitLoss && profitLoss.holdings.length > 0 && (
+                <section className="analysis-page-section">
+                    <div className="analysis-card">
+                        <h2 className="analysis-card-title">Profit & Loss</h2>
+                        <table className="holdings-ledger-table">
+                            <thead>
+                            <tr>
+                                <th>Ticker</th>
+                                <th>Market Value</th>
+                                <th>Cost Basis</th>
+                                <th>Unrealized P/L</th>
+                                <th>Return %</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {pnlSorted.map((p) => (
+                                <tr key={p.ticker}>
+                                    <td className="ledger-symbol">{p.ticker}</td>
+                                    <td>{formatMoneyFull(p.marketValue)}</td>
+                                    <td>{formatMoneyFull(p.costBasis)}</td>
+                                    <td style={{color: p.unrealizedPnl >= 0 ? '#27ae60' : '#e74c3c', fontWeight: 600}}>
+                                        {p.unrealizedPnl >= 0 ? '+' : ''}{formatMoneyFull(p.unrealizedPnl)}
+                                    </td>
+                                    <td style={{color: (p.unrealizedPnlPercent ?? 0) >= 0 ? '#27ae60' : '#e74c3c'}}>
+                                        {p.unrealizedPnlPercent != null ? `${p.unrealizedPnlPercent >= 0 ? '+' : ''}${p.unrealizedPnlPercent.toFixed(2)}%` : '—'}
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                        {profitLoss.totalUnrealizedPnl !== undefined && (
+                            <div style={{
+                                marginTop: 16,
+                                paddingTop: 16,
+                                borderTop: '1px solid var(--line)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                fontSize: '0.88rem',
+                            }}>
+                                <span style={{color: 'var(--muted)'}}>Total P/L</span>
+                                <span style={{
+                                    color: profitLoss.totalUnrealizedPnl >= 0 ? '#27ae60' : '#e74c3c',
+                                    fontWeight: 700,
+                                }}>
+                                    {profitLoss.totalUnrealizedPnl >= 0 ? '+' : ''}{formatMoneyFull(profitLoss.totalUnrealizedPnl)}
+                                    {profitLoss.totalUnrealizedPnlPercent != null && ` (${profitLoss.totalUnrealizedPnlPercent >= 0 ? '+' : ''}${profitLoss.totalUnrealizedPnlPercent.toFixed(2)}%)`}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )}
+
+            {aiText && (
+                <section className="analysis-page-section">
+                    <div className="analysis-card">
+                        <h2 className="analysis-card-title">
+                            AI Insights
+                            {isAiStreaming && <span className="ai-streaming-indicator">Generating...</span>}
+                        </h2>
+                        <p style={{
+                            fontSize: '0.92rem',
+                            color: 'var(--muted-darker)',
+                            lineHeight: 1.7,
+                            margin: 0,
+                            whiteSpace: 'pre-wrap',
+                        }}>{aiText}</p>
+                    </div>
+                </section>
+            )}
 
             <section className="analysis-page-section">
                 <div className="analysis-card">

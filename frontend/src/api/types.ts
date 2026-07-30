@@ -146,3 +146,127 @@ export interface PortfolioExposure {
   items: PortfolioExposureItem[];
   warnings: string[];
 }
+
+export type AnalysisAssetType = 'STOCK' | 'ETF' | 'MUTUAL_FUND' | 'CRYPTO' | 'CASH' | 'BANK_DEPOSIT' | 'FUND' | 'TERM_DEPOSIT';
+
+export interface AnalysisAssetAllocation {
+  assetType: AnalysisAssetType;
+  marketValue: number;
+  percent: number;
+}
+
+export interface AnalysisOverview {
+  totalMarketValue: number;
+  allocations: AnalysisAssetAllocation[];
+}
+
+export interface AnalysisTopHolding {
+  ticker: string;
+  assetType: AnalysisAssetType;
+  percentOfPortfolio: number;
+}
+
+export type AnalysisRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface AnalysisConcentration {
+  hhi: number;
+  topHoldingTicker: string | null;
+  topHoldingPercent: number;
+  riskLevel: AnalysisRiskLevel;
+  holdingCount: number;
+  topHoldings: AnalysisTopHolding[];
+  topHoldingsCombinedPercent: number;
+}
+
+export interface AnalysisOverlapStock {
+  ticker: string;
+  name: string;
+  fundWeightPercent: number;
+}
+
+export interface AnalysisFundOverlapEntry {
+  fundTicker: string;
+  fundName: string;
+  overlapStocks: AnalysisOverlapStock[];
+  overlapMarketValue: number;
+  overlapPercentOfPortfolio: number;
+}
+
+export interface AnalysisUnavailableFund {
+  fundTicker: string;
+  reason: string;
+}
+
+export interface AnalysisFundOverlap {
+  funds: AnalysisFundOverlapEntry[];
+  unavailableFunds: AnalysisUnavailableFund[];
+  totalOverlapMarketValue: number;
+  totalOverlapPercentOfPortfolio: number;
+}
+
+export interface AnalysisLookThroughItem {
+  ticker: string;
+  displayName: string | null;
+  directMarketValue: number;
+  fundAttributedMarketValue: number;
+  effectiveMarketValue: number;
+  effectivePercent: number;
+}
+
+export interface AnalysisLookThrough {
+  items: AnalysisLookThroughItem[];
+  lookThroughHhi: number;
+  lookThroughRiskLevel: AnalysisRiskLevel;
+  topTicker: string | null;
+  topPercent: number;
+  attributedPercentOfPortfolio: number;
+}
+
+export interface AnalysisSectorAllocation {
+  sector: string;
+  directMarketValue: number;
+  indirectMarketValue: number;
+  effectiveMarketValue: number;
+  effectivePercentOfPortfolio: number;
+}
+
+export interface AnalysisSectorExposure {
+  sectors: AnalysisSectorAllocation[];
+  sectorHhi: number;
+  sectorRiskLevel: AnalysisRiskLevel;
+  topSector: string | null;
+  topSectorPercent: number;
+  attributedPercentOfPortfolio: number;
+}
+
+export interface AnalysisHoldingPnl {
+  ticker: string;
+  assetType: AnalysisAssetType;
+  marketValue: number;
+  costBasis: number;
+  unrealizedPnl: number;
+  unrealizedPnlPercent: number | null;
+}
+
+export interface AnalysisProfitLoss {
+  holdings: AnalysisHoldingPnl[];
+  totalCostBasis: number;
+  totalMarketValue: number;
+  totalUnrealizedPnl: number;
+  totalUnrealizedPnlPercent: number | null;
+  bestPerformerTicker: string | null;
+  bestPerformerPnlPercent: number | null;
+  worstPerformerTicker: string | null;
+  worstPerformerPnlPercent: number | null;
+  missingCostBasisTickers: string[];
+}
+
+export interface PortfolioAnalysisFacts {
+  overview: AnalysisOverview;
+  concentration: AnalysisConcentration;
+  fundOverlap: AnalysisFundOverlap;
+  lookThrough: AnalysisLookThrough;
+  sectorExposure: AnalysisSectorExposure;
+  profitLoss: AnalysisProfitLoss;
+}
+

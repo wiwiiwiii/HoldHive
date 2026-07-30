@@ -202,6 +202,7 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                                 <th>Symbol</th>
                                 <th>Type</th>
                                 <th>Qty</th>
+                                <th>Avg Price</th>
                                 <th>Price</th>
                                 <th>Market Value</th>
                                 <th>P/L</th>
@@ -216,10 +217,11 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                                     <td className="ledger-symbol">{row.ticker}</td>
                                     <td>{row.assetType}</td>
                                     <td>{row.quantity > 0 ? row.quantity : '-'}</td>
+                                    <td>{formatMoney(row.averagePurchasePrice)}</td>
                                     <td>
                                         {row.currentPrice != null
                                             ? formatMoney(row.currentPrice)
-                                            : formatMoney(row.averagePurchasePrice)}
+                                            : '—'}
                                     </td>
                                     <td className="ledger-value">
                                         {row.marketValue != null ? formatMoney(row.marketValue) : '—'}
@@ -239,14 +241,14 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                                             onClick={() => openEdit(row)}
                                             title={`Edit ${row.ticker}`}
                                         >
-                                            <Pencil size={14} />
+                                            <Pencil size={14}/>
                                         </button>
                                         <button
                                             className="ledger-delete-btn"
                                             onClick={() => setDeleteConfirmId(row.id)}
                                             title={`Delete ${row.ticker}`}
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={16}/>
                                         </button>
                                     </td>
                                 </tr>
@@ -273,8 +275,11 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
                             This action cannot be undone.
                         </p>
                         <div className="delete-dialog-actions">
-                            <button className="delete-dialog-cancel" onClick={() => setDeleteConfirmId(null)}>Cancel</button>
-                            <button className="delete-dialog-confirm" onClick={() => handleDelete(deleteConfirmId, deleteTarget.ticker)}>Delete</button>
+                            <button className="delete-dialog-cancel" onClick={() => setDeleteConfirmId(null)}>Cancel
+                            </button>
+                            <button className="delete-dialog-confirm"
+                                    onClick={() => handleDelete(deleteConfirmId, deleteTarget.ticker)}>Delete
+                            </button>
                         </div>
                     </div>
                 </div>

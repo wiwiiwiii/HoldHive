@@ -59,10 +59,6 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                         </p>
                     </div>
                 </div>
-                <div className="gateway-hover-hint">
-                    <p className="hover-hint-title">Hover preview</p>
-                    <p className="hover-hint-sub">scale + halo + label</p>
-                </div>
             </div>
 
             <div className="hive-map-container">
@@ -191,48 +187,6 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                         </filter>
                     </defs>
                 </svg>
-            </div>
-
-            <div className="gateway-legend">
-                <div className="legend-state">
-                    <span className="legend-state-label">Idle</span>
-                    <svg width="32" height="32" viewBox="0 0 32 32">
-                        <polygon
-                            points={hexagonPoints(16, 16, 12)}
-                            fill="none"
-                            stroke="#f6b33b"
-                            strokeWidth="1.5"
-                        />
-                    </svg>
-                </div>
-                <div className="legend-state">
-                    <span className="legend-state-label">Hover</span>
-                    <svg width="32" height="32" viewBox="0 0 32 32">
-                        <polygon
-                            points={hexagonPoints(16, 16, 14)}
-                            fill="#f6b33b"
-                            fillOpacity="0.15"
-                            stroke="#f6b33b"
-                            strokeWidth="1"
-                        />
-                        <polygon
-                            points={hexagonPoints(16, 16, 10)}
-                            fill="#f6b33b"
-                        />
-                    </svg>
-                </div>
-                <div className="legend-state">
-                    <span className="legend-state-label">Click</span>
-                    <svg width="32" height="32" viewBox="0 0 32 32">
-                        <polygon
-                            points={hexagonPoints(16, 16, 12)}
-                            fill="none"
-                            stroke="#f6b33b"
-                            strokeWidth="1.5"
-                        />
-                    </svg>
-                    <span className="legend-navigate">Navigate</span>
-                </div>
             </div>
         </div>
     );
