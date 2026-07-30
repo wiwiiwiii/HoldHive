@@ -142,7 +142,16 @@ describe('App', () => {
           lookthrough: true,
           priceMode: 'LIVE_ONLY',
           totalMarketValue: 0,
-          items: [],
+          items: [{
+            ticker: 'AAPL',
+            displayName: 'Apple Inc.',
+            assetType: 'STOCK',
+            directMarketValue: 700,
+            fundLookthroughMarketValue: 50,
+            totalExposureValue: 750,
+            exposurePercent: 0.75,
+            sources: ['DIRECT', 'FUND:VOO', 'FUND:QQQ'],
+          }],
           warnings: [],
         }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
@@ -162,5 +171,6 @@ describe('App', () => {
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/holdings?priceMode=LIVE_ONLY'));
       expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/portfolio/exposure?lookthrough=true&priceMode=LIVE_ONLY'));
     });
+    expect(await screen.findByTestId('portfolio-exposure-scroll')).toBeInTheDocument();
   });
 });

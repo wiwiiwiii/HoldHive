@@ -2754,3 +2754,60 @@ code {
 .dark .fund-warning-text {
   color: #c9a84c;
 }
+
+/* Dashboard exposure table containment */
+.charts-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.chart-card {
+  min-width: 0;
+}
+
+.exposure-table-card {
+  overflow: hidden;
+}
+
+.ledger-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.exposure-ledger-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.exposure-ledger-table th,
+.exposure-ledger-table td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.exposure-col-ticker {
+  width: 11%;
+}
+
+.exposure-col-type {
+  width: 13%;
+}
+
+.exposure-col-value {
+  width: 14%;
+}
+
+.exposure-col-lookthrough {
+  width: 18%;
+}
+
+.exposure-col-percent {
+  width: 11%;
+}
+
+.exposure-col-sources {
+  width: 19%;
+}
+

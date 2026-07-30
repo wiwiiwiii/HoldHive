@@ -416,7 +416,7 @@ export function DashboardPage({ priceMode = 'BEST_AVAILABLE' }: DashboardPagePro
 
             {exposureItems.length > 0 && (
                 <section className="charts-row">
-                    <div className="chart-card" style={{gridColumn: '1 / -1'}}>
+                    <div className="chart-card exposure-table-card" style={{gridColumn: '1 / -1'}}>
                         <h2 className="chart-title">Portfolio Exposure</h2>
                         <p className="chart-subtitle">Direct + fund lookthrough positions</p>
                         {exposureWarnings.length > 0 && (
@@ -429,7 +429,17 @@ export function DashboardPage({ priceMode = 'BEST_AVAILABLE' }: DashboardPagePro
                                 ))}
                             </div>
                         )}
-                        <table className="holdings-ledger-table">
+                        <div className="ledger-table-scroll" data-testid="portfolio-exposure-scroll">
+                            <table className="holdings-ledger-table exposure-ledger-table">
+                                <colgroup>
+                                    <col className="exposure-col-ticker"/>
+                                    <col className="exposure-col-type"/>
+                                    <col className="exposure-col-value"/>
+                                    <col className="exposure-col-lookthrough"/>
+                                    <col className="exposure-col-value"/>
+                                    <col className="exposure-col-percent"/>
+                                    <col className="exposure-col-sources"/>
+                                </colgroup>
                             <thead>
                             <tr>
                                 <th>Ticker</th>
@@ -454,7 +464,8 @@ export function DashboardPage({ priceMode = 'BEST_AVAILABLE' }: DashboardPagePro
                                 </tr>
                             ))}
                             </tbody>
-                        </table>
+                            </table>
+                        </div>
                     </div>
                 </section>
             )}
