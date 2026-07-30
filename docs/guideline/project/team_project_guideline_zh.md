@@ -2,6 +2,8 @@
 
 > 项目周期：两天规划 + 两天编码
 
+> 当前交付：`main` 已同步 `qa` 并打 tag `1.0.0`。后续修订仍从 `qa` 创建 `docs/*`、`bugfix/*` 或 `feature/*` 分支，合并回 `qa` 后再按需同步到 `main`。
+
 配套设计文档：
 
 - [技术栈定案](./technology_stack_zh.md)
@@ -16,6 +18,15 @@
 HoldHive 是一个面向单一用户的多资产投资组合管理应用。用户可以查看、添加和删除股票、场内基金、场外基金、加密资产、现金和银行存款，并查看组合市值、盈亏和图表化表现。
 
 执行原则是先交付稳定、可解释、可演示的 MVP，再考虑增强功能。任何扩展都不得影响持仓管理、估值计算、图表展示和本地启动流程。
+
+### 1.1 `1.0.0` 已交付范围
+
+`1.0.0` 版本已覆盖从录入、估值、穿透到分析展示的完整演示链路：
+
+- 后端：MySQL + Flyway schema/seed、持仓 CRUD、行情搜索/报价、缓存降级、基金穿透、组合暴露、规则型组合分析和 DeepSeek 兼容 LLM 解读。
+- 前端：Gateway 六边形入口、Dashboard、Holdings、Performance、Analysis、Add Holding、Settings 多页面，以及 day/night 主题、可拖动侧边栏、data mode、loading/thinking 动画和用户友好 toast。
+- 数据：Flyway `V4__seed_demo_portfolio_data.sql` 提供股票、ETF、场外基金、crypto、cash、bank deposit 和 unpriced holding，团队成员同步后即可读取演示数据。
+- 流程：所有功能通过 `feature/* -> qa -> main` PR 合并，GitHub Actions 覆盖 `backend`、`backend mysql smoke`、`frontend` 和 `docs`。
 
 ## 2. 竞品介绍和链接
 
@@ -83,7 +94,7 @@ HoldHive MVP 支持六类资产，范围必须明确，避免四天项目膨胀�
 | 资产类型 | 示例 | MVP 能力 | 不做内容 |
 | --- | --- | --- | --- |
 | `STOCK` | `AAPL`、`600519` | 行情或演示价格、市值、盈亏、占比 | 专业研报、财报因子、交易下单 |
-| `ETF` | `VOO`、`SPY`、`510300` | 场内基金，与股票同样录入和估值，配置图单独分类；添加时提示可能有底层股票 | 基金穿透作为 P1，不阻塞 P0 |
+| `ETF` | `VOO`、`SPY`、`510300` | 场内基金，与股票同样录入和估值，配置图单独分类；添加时提示可能有底层股票；`1.0.0` 已支持基金穿透和组合暴露 | 基金评级、申赎流水、完整披露历史 |
 | `MUTUAL_FUND` | 开放式基金、货币基金 | 场外基金，MVP 可用手工/演示净值估值；添加时提示披露滞后和底层资产 | 申赎流水、费率和基金评级 |
 | `CRYPTO` | `BTC`、`ETH` | 支持展示、手工录入和 CoinGecko/cache/demo 价格估值 | 钱包连接、链上交易历史、币币兑换 |
 | `CASH` | `USD` | 固定按 `1.00000000` 估值，纳入总值和配置 | 存取款流水、利息、外汇换算 |
@@ -101,7 +112,7 @@ HoldHive MVP 支持六类资产，范围必须明确，避免四天项目膨胀�
 This fund may contain stocks already held directly. Lookthrough data is for exposure analysis only and may lag the latest disclosure.
 ```
 
-分期规则：
+规划阶段分期规则如下；`1.0.0` 已完成 P0，并把 P1/P2 中最关键的穿透展示和组合暴露纳入演示链路：
 
 - **P0：** 允许添加场内/场外基金，并显示“可能包含底层股票”的提示。
 - **P1：** 后端提供基金穿透接口，展示基金最新披露的 Top Holdings 和权重。
@@ -109,7 +120,7 @@ This fund may contain stocks already held directly. Lookthrough data is for expo
 
 ### 3.3.3 大模型分析
 
-大模型分析放在最后阶段，不进入 P0 或 Day 3-4 的核心交付。该功能只消费后端整理后的结构化快照，包括资产类型、市值占比、价格状态、基金穿透摘要和风险提示；它不直接访问数据库、不调用第三方行情、不生成交易建议。
+大模型分析在规划时被放在最后阶段；`1.0.0` 已实现为可降级的 Analysis 页面增强功能。该功能只消费后端整理后的结构化快照，包括资产类型、市值占比、价格状态、基金穿透摘要和风险提示；它不直接访问数据库、不调用第三方行情、不生成交易建议。
 
 前端展示原则：
 
@@ -179,8 +190,8 @@ HoldHive Dashboard
 | 配置图 | 资产类型和每项持仓的市值占比 | 图例含 assetType、ticker、比例和金额；无有效价格时解释无法计算 |
 | 持仓表 | assetType、ticker、数量、均价、现价、市值、盈亏、占比 | 支持删除；移动端允许横向滚动或折叠次要列 |
 | 添加表单 | assetType、ticker、数量、平均买入价 | 保留用户输入；基金、现金、存款显示专属提示；错误定位到字段；提交时防止重复点击 |
-| 基金穿透卡 | 基金 Top Holdings、披露日期、重叠股票提醒 | P1 展示；P0 只显示基金可能重叠的提示 |
-| AI 分析卡 | 大模型生成的组合解读、关键发现、数据限制 | 最后阶段展示；必须带非投资建议免责声明 |
+| 基金穿透卡 | 基金 Top Holdings、披露日期、重叠股票提醒 | `1.0.0` 已通过基金穿透和 portfolio exposure 展示，穿透数据不改变主持仓 |
+| AI 分析卡 | 大模型生成的组合解读、关键发现、数据限制 | `1.0.0` 已接入 DeepSeek 兼容 SSE；失败时保留规则型分析，必须带非投资建议免责声明 |
 | 空状态 | 产品价值说明和主行动按钮 | 不显示全是 0 的无意义图表 |
 | 错误状态 | 可理解的原因和恢复动作 | API 失败可重试；表单失败不关闭表单 |
 
@@ -206,8 +217,8 @@ HoldHive Dashboard
 | 图表 | 优先级 | 前端库建议 | 数据来源 | 说明 |
 | --- | --- | --- | --- | --- |
 | Asset Allocation Donut | P0 | Recharts `PieChart` 或 Chart.js doughnut | `summary.allocations` | 展示股票、场内基金、场外基金、加密资产、现金、银行存款及各持仓市值占比，必须配文字图例 |
-| Fund Lookthrough Card | P1 | 普通卡片 + 表格，不强依赖图表库 | `fundLookthrough.holdings` | 展示基金底层 Top Holdings、权重、披露日期和重叠提醒 |
-| AI Portfolio Brief | Final | 普通卡片 + 状态标签 | `ai-analysis` | 展示解释性结论、数据限制和免责声明，不做买卖建议 |
+| Fund Lookthrough Card | P1 / 已实现 | 普通卡片 + 表格，不强依赖图表库 | `fundLookthrough.holdings`、`portfolio/exposure` | 展示基金底层 Top Holdings、权重、披露日期和重叠提醒 |
+| AI Portfolio Brief | Final / 已实现 | 普通卡片 + 状态标签 | `portfolio/analysis/insights/full` | 展示解释性结论、数据限制和免责声明，不做买卖建议 |
 | Portfolio Value Trend | P1 | Recharts `AreaChart` / `LineChart` 或 Chart.js line | 演示历史估值或后续 `portfolio_valuation` | 用于增强展示，不作为 P0 阻塞 |
 | Gain/Loss Bar | P1 | Recharts `BarChart` 或 Chart.js bar | holdings | 展示每个持仓盈亏，帮助识别贡献项 |
 | Concentration Indicator | P1 | CSS progress/ring 或 Recharts radial | summary 最大占比 | 超过 40% 时提示，不做投资建议 |
@@ -322,7 +333,7 @@ HoldHive Dashboard
 - 价格服务断网时仍可演示已保存持仓，并明确解释数据状态。
 - 四位成员都能解释产品取舍、计算公式和自己负责或审查的代码。
 
-明确不在本期范围内：登录和多用户、真实交易、券商连接、交易所连接、钱包连接、银行连接、CSV 导入、现金流水、基金申赎流水、存款利息自动计提、股息、税务、公司行动、多币种自动换算、历史交易账本、基准比较、专业风险指标和个性化投资建议。基金穿透和大模型分析均为后期模块，不阻塞 P0 演示。
+明确不在本期范围内：登录和多用户、真实交易、券商连接、交易所连接、钱包连接、银行连接、CSV 导入、现金流水、基金申赎流水、存款利息自动计提、股息、税务、公司行动、多币种自动换算、历史交易账本、基准比较、专业风险指标和个性化投资建议。基金穿透、组合暴露和大模型解读在 `1.0.0` 中作为演示增强实现，但它们不改变持仓 CRUD、基础估值和数据可信度标识这条核心链路。
 
 ## 4. MVP 范围
 

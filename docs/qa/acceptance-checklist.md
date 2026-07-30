@@ -1,6 +1,6 @@
 # HoldHive Acceptance Checklist
 
-Use this checklist for `qa` branch validation.
+Use this checklist for `qa` branch validation and before opening a `qa -> main` release PR.
 
 ## Local Startup
 
@@ -10,6 +10,7 @@ Use this checklist for `qa` branch validation.
 - [ ] `GET http://localhost:8080/api/v1/health` returns `UP`
 - [ ] `cd frontend && npm install && npm run dev`
 - [ ] Frontend opens at `http://localhost:5173`
+- [ ] Seeded demo holdings appear immediately on Dashboard/Holdings after backend startup
 
 ## MVP Functional Checks
 
@@ -20,6 +21,8 @@ Use this checklist for `qa` branch validation.
 - [ ] View portfolio summary
 - [ ] View allocation chart
 - [ ] View lookthrough exposure with direct + fund-derived values
+- [ ] Switch Settings data mode between `BEST_AVAILABLE`, `LIVE_ONLY`, and `DEMO_ALLOWED`; Dashboard/Holdings/Performance/Analysis refresh with the selected mode
+- [ ] Analysis page loads structured facts and AI insights; if LLM is unavailable, structured cards still render
 - [ ] See clear state when prices are demo, cached, or unavailable
 
 ### Asset Type Coverage
@@ -40,9 +43,13 @@ Use this checklist for `qa` branch validation.
 - [ ] Slow response or unavailable price shows a loading/unavailable indicator instead of hanging or crashing
 - [ ] Fund overlap warning appears when direct holdings also appear inside fund lookthrough
 - [ ] Unknown fund disclosure shows a warning, not a broken page
+- [ ] Gateway hexagon fits without vertical scrolling on normal laptop viewport
+- [ ] Sidebar can be resized but remains within min/max width
+- [ ] Add/edit/delete success and failure messages are short human-readable messages, not raw JSON
 
 ## Regression Checks
 
 - [ ] `cd backend && ./mvnw verify`
 - [ ] `cd frontend && npm run test -- --run`
 - [ ] `cd frontend && npm run build`
+- [ ] GitHub Actions required checks pass: `backend`, `backend mysql smoke`, `frontend`, `docs`
