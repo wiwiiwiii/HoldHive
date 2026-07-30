@@ -1,6 +1,14 @@
 package com.holdhive.analysis.infrastructure.eastmoney;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
@@ -8,15 +16,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -72,7 +71,7 @@ class EastMoneyFundHoldingsProviderTest {
         assertThat(first.ticker()).isEqualTo("00700");
         assertThat(first.name()).isEqualTo("腾讯控股");
         assertThat(first.weightPercent()).isEqualByComparingTo(new BigDecimal("5.72"));
-        assertThat(first.sector()).isEqualTo("传媒");
+        assertThat(first.sector()).isEqualTo("Media");
 
         FundConstituent moutai = snapshot.constituents().stream()
                 .filter(c -> c.ticker().equals("600519"))
@@ -80,7 +79,7 @@ class EastMoneyFundHoldingsProviderTest {
                 .orElseThrow();
         assertThat(moutai.name()).isEqualTo("贵州茅台");
         assertThat(moutai.weightPercent()).isEqualByComparingTo(new BigDecimal("5.62"));
-        assertThat(moutai.sector()).isEqualTo("食品饮料");
+        assertThat(moutai.sector()).isEqualTo("Food & Beverage");
     }
 
     @Test

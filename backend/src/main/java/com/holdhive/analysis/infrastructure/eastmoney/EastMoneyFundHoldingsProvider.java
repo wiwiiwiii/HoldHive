@@ -45,7 +45,7 @@ import com.holdhive.analysis.domain.model.FundHoldingSnapshot;
  *
  * <p>Bond ({@code fundboods}) and FOF ({@code fundfofs}) positions are
  * intentionally ignored: the analysis models equity look-through only, and
- * unpenetrated portions already land in the explicit "基金未穿透部分" bucket.
+ * unpenetrated portions already land in the explicit "Fund Unpenetrated" bucket.
  */
 @Component
 @ConditionalOnProperty(name = "holdhive.fund-holdings.provider", havingValue = "eastmoney")
