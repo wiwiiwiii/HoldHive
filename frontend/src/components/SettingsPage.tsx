@@ -1,6 +1,22 @@
-import { useState, useEffect } from 'react';
+import type { PriceMode } from '../api/types';
 
-const DATA_MODES = ['Demo', 'Live', 'Cached'];
+const DATA_MODES: { value: PriceMode; label: string; hint: string }[] = [
+    {
+        value: 'BEST_AVAILABLE',
+        label: 'Best available',
+        hint: 'Uses live quotes first, then valid cache when live data is not available.',
+    },
+    {
+        value: 'LIVE_ONLY',
+        label: 'Live only',
+        hint: 'Only accepts live quotes; unavailable prices remain clearly unpriced.',
+    },
+    {
+        value: 'DEMO_ALLOWED',
+        label: 'Demo allowed',
+        hint: 'Allows deterministic demo prices for classroom walkthroughs.',
+    },
+];
 
 const MOTION_PREFS = [
     'Cards: 160ms fade/slide',
@@ -11,12 +27,13 @@ const MOTION_PREFS = [
 interface SettingsPageProps {
     isDark?: boolean;
     onThemeChange?: (dark: boolean) => void;
+    dataMode: PriceMode;
+    onDataModeChange: (mode: PriceMode) => void;
 }
 
-export function SettingsPage({ isDark, onThemeChange }: SettingsPageProps) {
-    const [dataMode, setDataMode] = useState('Demo');
-
+export function SettingsPage({ isDark, onThemeChange, dataMode, onDataModeChange }: SettingsPageProps) {
     const theme = isDark ? 'night' : 'day';
+    const selectedMode = DATA_MODES.find((mode) => mode.value === dataMode) ?? DATA_MODES[0];
 
     const handleThemeClick = (newTheme: 'day' | 'night') => {
         onThemeChange?.(newTheme === 'night');
@@ -59,15 +76,15 @@ export function SettingsPage({ isDark, onThemeChange }: SettingsPageProps) {
                     <div className="data-mode-buttons">
                         {DATA_MODES.map((mode) => (
                             <button
-                                key={mode}
-                                className={`data-mode-btn ${dataMode === mode ? 'active' : ''}`}
-                                onClick={() => setDataMode(mode)}
+                                key={mode.value}
+                                className={`data-mode-btn ${dataMode === mode.value ? 'active' : ''}`}
+                                onClick={() => onDataModeChange(mode.value)}
                             >
-                                {mode}
+                                {mode.label}
                             </button>
                         ))}
                     </div>
-                    <p className="settings-hint">Demo mode is always labelled.</p>
+                    <p className="settings-hint">{selectedMode.hint}</p>
                 </div>
 
                 <div className="settings-card">

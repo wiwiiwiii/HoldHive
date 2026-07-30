@@ -130,7 +130,7 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
 
         setIsSubmitting(true);
         try {
-            await createHolding({
+            const createdHolding = await createHolding({
                 assetType,
                 ticker: selectedItem?.ticker ?? searchQuery.trim().toUpperCase(),
                 exchangeCode: selectedItem?.exchangeCode,
@@ -140,8 +140,7 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
                 quantity: parseFloat(quantity),
                 averagePurchasePrice: isFixedPriceType ? 1 : parseFloat(price),
             });
-            const displayTicker = selectedItem?.ticker ?? searchQuery.trim().toUpperCase();
-            toast.success(`${displayTicker} added. Portfolio totals refreshed.`);
+            toast.success(`Added ${createdHolding.ticker} successfully. Portfolio totals refreshed.`);
             setSearchQuery('');
             setSelectedItem(null);
             setSearchResults([]);

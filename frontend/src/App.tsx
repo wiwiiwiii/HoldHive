@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   Hexagon,
   LayoutDashboard,
@@ -9,7 +9,6 @@ import {
   Plus,
   Moon,
   Sun,
-  Activity,
 } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { DashboardPage } from './components/DashboardPage';
@@ -19,6 +18,7 @@ import { PerformancePage } from './components/PerformancePage';
 import { AnalysisPage } from './components/AnalysisPage';
 import { SettingsPage } from './components/SettingsPage';
 import { AddHoldingPage } from './components/AddHoldingPage';
+import type { PriceMode } from './api/types';
 
 
 const NAV_ITEMS = [
@@ -39,19 +39,33 @@ const PAGE_INFO: Record<string, { title: string; subtitle: string }> = {
   Settings: { title: 'Settings', subtitle: 'Theme and preferences' },
 };
 
+const SIDEBAR_MIN_WIDTH = 180;
+const SIDEBAR_MAX_WIDTH = 320;
+const SIDEBAR_DEFAULT_WIDTH = 220;
+
+function clampSidebarWidth(width: number): number {
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, width));
+}
+
 export function App() {
   const [activeNav, setActiveNav] = useState('Gateway');
   const [isDark, setIsDark] = useState(false);
   const [showAddHolding, setShowAddHolding] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const addHoldingRef = useRef<{ reset: () => void } | null>(null);
+  const [priceMode, setPriceMode] = useState<PriceMode>('BEST_AVAILABLE');
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
+  const [isSidebarResizing, setIsSidebarResizing] = useState(false);
 
   const pageInfo = PAGE_INFO[activeNav] ?? PAGE_INFO.Dashboard;
 
-  const handleHoldingSaved = useCallback(() => {
-    setShowAddHolding(false);
+  const handleHoldingsChanged = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  const handleHoldingSaved = useCallback(() => {
+    setShowAddHolding(false);
+    handleHoldingsChanged();
+  }, [handleHoldingsChanged]);
 
   const handleNavClick = useCallback((label: string) => {
     setActiveNav(label);
@@ -66,15 +80,51 @@ export function App() {
     setShowAddHolding(false);
   }, []);
 
+  const handleSidebarResizeStart = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setIsSidebarResizing(true);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      setSidebarWidth(clampSidebarWidth(moveEvent.clientX));
+    };
+
+    const handlePointerUp = () => {
+      setIsSidebarResizing(false);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  }, []);
+
   const renderPage = () => {
     if (activeNav === 'Gateway') {
       return <GatewayPage onNavigate={handleNavClick} onAddHolding={handleAddClick} isDark={isDark} />;
     }
-    if (activeNav === 'Dashboard') return <DashboardPage />;
-    if (activeNav === 'Holdings') return <HoldingsPage isDark={isDark} refreshTrigger={refreshKey} />;
-    if (activeNav === 'Performance') return <PerformancePage />;
-    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} />;
-    if (activeNav === 'Settings') return <SettingsPage isDark={isDark} onThemeChange={setIsDark} />;
+    if (activeNav === 'Dashboard') return <DashboardPage priceMode={priceMode} />;
+    if (activeNav === 'Holdings') {
+      return (
+          <HoldingsPage
+              isDark={isDark}
+              refreshTrigger={refreshKey}
+              priceMode={priceMode}
+              onHoldingsChanged={handleHoldingsChanged}
+          />
+      );
+    }
+    if (activeNav === 'Performance') return <PerformancePage priceMode={priceMode} />;
+    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} refreshTrigger={refreshKey} priceMode={priceMode} />;
+    if (activeNav === 'Settings') {
+      return (
+          <SettingsPage
+              isDark={isDark}
+              onThemeChange={setIsDark}
+              dataMode={priceMode}
+              onDataModeChange={setPriceMode}
+          />
+      );
+    }
     return (
         <div className="placeholder-page">
           <Hexagon size={48} className="placeholder-icon" />
@@ -86,7 +136,10 @@ export function App() {
   };
 
   return (
-      <div className={`app-container ${isDark ? 'dark' : ''}`}>
+      <div
+          className={`app-container ${isDark ? 'dark' : ''} ${isSidebarResizing ? 'sidebar-resizing' : ''}`}
+          style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
+      >
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="sidebar-brand">
@@ -115,6 +168,16 @@ export function App() {
               );
             })}
           </nav>
+
+          <button
+              type="button"
+              className="sidebar-resize-handle"
+              aria-label="Resize sidebar"
+              aria-valuemin={SIDEBAR_MIN_WIDTH}
+              aria-valuemax={SIDEBAR_MAX_WIDTH}
+              aria-valuenow={sidebarWidth}
+              onPointerDown={handleSidebarResizeStart}
+          />
 
         </aside>
 

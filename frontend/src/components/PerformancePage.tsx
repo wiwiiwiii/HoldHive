@@ -8,7 +8,8 @@ import {
     Tooltip,
 } from 'recharts';
 import { fetchHoldingsFull, fetchPortfolioSummary } from '../api/portfolioApi';
-import type { HoldingResponse, PortfolioSummaryResponse } from '../api/types';
+import type { HoldingResponse, PortfolioSummaryResponse, PriceMode } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -57,26 +58,39 @@ interface InsightCard {
     color: string;
 }
 
-export function PerformancePage() {
+interface PerformancePageProps {
+    priceMode?: PriceMode;
+}
+
+export function PerformancePage({ priceMode = 'BEST_AVAILABLE' }: PerformancePageProps) {
     const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
         async function load() {
+            setIsLoading(true);
             try {
-                const [data, sum] = await Promise.all([fetchHoldingsFull(), fetchPortfolioSummary()]);
+                const [data, sum] = await Promise.all([
+                    fetchHoldingsFull(priceMode),
+                    fetchPortfolioSummary(priceMode),
+                ]);
                 if (!cancelled) {
                     setHoldings(data);
                     setSummary(sum);
                 }
             } catch {
                 // keep empty on failure
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         }
         load();
         return () => { cancelled = true; };
-    }, []);
+    }, [priceMode]);
 
     const chartData = useMemo((): PerformancePoint[] => {
         if (!summary || summary.totalMarketValue <= 0) return [];
@@ -139,7 +153,12 @@ export function PerformancePage() {
                             : 'Add holdings to see your portfolio trend'}
                     </p>
                     <div className="performance-chart-wrapper">
-                        {chartData.length > 0 ? (
+                        {isLoading && !summary ? (
+                            <ThinkingLoader
+                                label="Thinking through performance"
+                                detail="Building the value trend and contributor snapshot."
+                            />
+                        ) : chartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <AreaChart data={chartData}>
                                     <defs>

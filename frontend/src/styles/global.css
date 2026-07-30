@@ -54,10 +54,17 @@ code {
   background: var(--bg);
 }
 
+.app-container.sidebar-resizing,
+.app-container.sidebar-resizing * {
+  cursor: col-resize;
+  user-select: none;
+}
+
 /* ===== 3. Sidebar ===== */
 .sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
   background: var(--card);
   border-right: 1px solid var(--line);
   display: flex;
@@ -68,6 +75,48 @@ code {
   left: 0;
   bottom: 0;
   z-index: 10;
+  box-sizing: border-box;
+  transition: width 0.12s ease, min-width 0.12s ease, max-width 0.12s ease;
+}
+
+.sidebar-resizing .sidebar {
+  transition: none;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  bottom: 0;
+  width: 10px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 20;
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 4px;
+  width: 2px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle:focus-visible::after,
+.sidebar-resizing .sidebar-resize-handle::after {
+  background: var(--honey);
+  box-shadow: 0 0 0 3px rgba(246, 179, 59, 0.15);
+}
+
+.sidebar-resize-handle:focus-visible {
+  outline: none;
 }
 
 .sidebar-brand {
@@ -168,6 +217,9 @@ code {
   margin-left: var(--sidebar-width);
   padding: 32px 40px;
   max-width: 1200px;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: margin-left 0.12s ease;
 }
 
 /* ===== 5. Header ===== */
@@ -242,6 +294,10 @@ code {
 .dashboard-page-wrapper {
   max-width: 1000px;
   margin: 0 auto;
+}
+
+.dashboard-loading-section {
+  margin-bottom: 24px;
 }
 
 .metric-cards-row {
@@ -408,6 +464,10 @@ code {
   border: 1px solid #eef0f5;
 }
 
+.holdings-card {
+  overflow-x: auto;
+}
+
 .section-title {
   font-size: 1.15rem;
   font-weight: 700;
@@ -418,24 +478,28 @@ code {
 .holdings-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .holdings-table th {
   text-align: left;
-  font-size: 0.78rem;
+  font-size: clamp(0.84rem, 0.8vw, 0.9rem);
   font-weight: 600;
   color: var(--muted);
-  padding: 10px 12px;
+  padding: 11px 10px;
   border-bottom: 1px solid #f0f1f5;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .holdings-table td {
-  padding: 14px 12px;
-  font-size: 0.88rem;
+  padding: 15px 10px;
+  font-size: clamp(0.94rem, 0.88vw, 1rem);
+  line-height: 1.35;
   color: var(--ink);
   border-bottom: 1px solid #f6f7fb;
+  overflow-wrap: anywhere;
 }
 
 .holdings-table tr:last-child td {
@@ -444,10 +508,48 @@ code {
 
 .symbol-cell {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .value-cell {
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.price-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.price-status-live {
+  background: #e8f8f0;
+  color: #27ae60;
+}
+
+.price-status-cached {
+  background: #eef0fb;
+  color: #4F86F7;
+}
+
+.price-status-demo {
+  background: #fff9ed;
+  color: #f6b33b;
+}
+
+.price-status-fixed {
+  background: #f0f1f5;
+  color: #64748b;
+}
+
+.price-status-unavailable {
+  background: #fde8e8;
+  color: #e74c3c;
 }
 
 .notes-list {
@@ -487,15 +589,19 @@ code {
   padding: 32px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
-  max-width: 1000px;
+  max-width: 1180px;
   margin: 0 auto;
+}
+
+.gateway-card-fit {
+  padding: clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 28px);
 }
 
 .gateway-header-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: clamp(6px, 1vh, 12px);
 }
 
 .gateway-brand-area {
@@ -505,21 +611,21 @@ code {
 }
 
 .gateway-logo {
-  width: 100px;
+  width: clamp(70px, 8vw, 92px);
   height: auto;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .gateway-main-title {
-  font-size: 1.6rem;
+  font-size: clamp(1.2rem, 2.2vh, 1.45rem);
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 4px;
 }
 
 .gateway-main-subtitle {
-  font-size: 0.92rem;
+  font-size: clamp(0.8rem, 1.35vh, 0.88rem);
   color: var(--muted);
   margin: 0;
 }
@@ -544,45 +650,28 @@ code {
 .hive-map-container {
   display: flex;
   justify-content: center;
-  padding: 20px 0;
+  padding: clamp(4px, 0.8vh, 10px) 0 0;
 }
 
 .hive-map-svg {
   width: 100%;
-  max-width: 720px;
+  max-width: 936px;
   height: auto;
 }
 
-.hive-center-label {
-  font-size: 16px;
-  font-weight: 700;
-  fill: var(--ink);
-}
-
-.hive-center-sub {
-  font-size: 11px;
-  fill: var(--muted);
+.hive-map-svg-fit {
+  max-height: min(64vh, 650px);
+  object-fit: contain;
 }
 
 .hive-node-label {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 600;
   fill: var(--ink);
 }
 
 .hive-node-sub {
-  font-size: 11px;
-  fill: var(--muted);
-}
-
-.tooltip-title {
-  font-size: 13px;
-  font-weight: 600;
-  fill: var(--ink);
-}
-
-.tooltip-sub {
-  font-size: 11px;
+  font-size: 14px;
   fill: var(--muted);
 }
 
@@ -711,6 +800,7 @@ code {
   border: 1px solid #eef0f5;
   max-width: 1000px;
   margin: 0 auto 24px;
+  overflow-x: auto;
 }
 
 .holdings-ledger-title {
@@ -723,24 +813,28 @@ code {
 .holdings-ledger-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .holdings-ledger-table th {
   text-align: left;
-  font-size: 0.78rem;
+  font-size: clamp(0.84rem, 0.78vw, 0.9rem);
   font-weight: 600;
   color: var(--muted);
-  padding: 12px 14px;
+  padding: 13px 10px;
   border-bottom: 1px solid #f0f1f5;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .holdings-ledger-table td {
-  padding: 16px 14px;
-  font-size: 0.88rem;
+  padding: 16px 10px;
+  font-size: clamp(0.94rem, 0.86vw, 1rem);
+  line-height: 1.35;
   color: var(--ink);
   border-bottom: 1px solid #f6f7fb;
+  overflow-wrap: anywhere;
 }
 
 .holdings-ledger-table tr:last-child td {
@@ -754,7 +848,9 @@ code {
 
 .ledger-action-cell {
   text-align: right;
-  padding: 16px 14px !important;
+  min-width: 72px;
+  padding: 16px 10px !important;
+  white-space: nowrap;
 }
 
 .ledger-delete-btn {
@@ -894,10 +990,12 @@ code {
 
 .ledger-symbol {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .ledger-value {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .ledger-pl-positive {
@@ -1008,6 +1106,59 @@ code {
   margin-bottom: 24px;
 }
 
+.analysis-refresh-card {
+  background: var(--card);
+  border: 1px solid #eef0f5;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+}
+
+.analysis-refresh-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.analysis-refresh-detail {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.analysis-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line-darker);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 18px;
+  transition: all 0.15s ease;
+}
+
+.analysis-refresh-button:hover:not(:disabled) {
+  border-color: var(--honey);
+  transform: translateY(-1px);
+}
+
+.analysis-refresh-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
 .analysis-top-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1021,6 +1172,7 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  overflow-x: auto;
 }
 
 .analysis-card-title {
@@ -1373,6 +1525,7 @@ code {
 .dark .holdings-ledger-card,
 .dark .performance-chart-card,
 .dark .performance-insight-card,
+.dark .analysis-refresh-card,
 .dark .analysis-card,
 .dark .settings-card {
   background: var(--card);
@@ -1422,29 +1575,45 @@ code {
   color: var(--ink);
 }
 
+.dark .price-status-live {
+  background: #0f2419;
+  color: #27ae60;
+}
+
+.dark .price-status-cached {
+  background: #0f1629;
+  color: #4F86F7;
+}
+
+.dark .price-status-demo {
+  background: #1a1810;
+  color: #c9a84c;
+}
+
+.dark .price-status-fixed {
+  background: #1a1a24;
+  color: #8a94a6;
+}
+
+.dark .price-status-unavailable {
+  background: #2a1010;
+  color: #e74c3c;
+}
+
 .dark .holdings-conflict-card {
   background: #111111;
   border-color: var(--line);
 }
 
 /* Dark SVG fills */
-.dark .hive-center-label,
 .dark .hive-node-label {
   fill: var(--ink);
 }
 
-.dark .hive-center-sub,
 .dark .hive-node-sub {
   fill: var(--muted);
 }
 
-.dark .tooltip-title {
-  fill: var(--ink);
-}
-
-.dark .tooltip-sub {
-  fill: var(--muted);
-}
 
 /* ===== 15. Add Holding Page ===== */
 .add-holding-page-wrapper {
@@ -1694,12 +1863,6 @@ code {
   background: #1a1a24;
 }
 
-.price-status-demo {
-  font-size: 0.72rem;
-  color: var(--honey);
-  font-weight: 500;
-}
-
 .holdings-empty-state {
   display: flex;
   flex-direction: column;
@@ -1798,6 +1961,144 @@ code {
   color: #f8a0a0;
 }
 
+/* ===== Loading States ===== */
+.thinking-loader {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 249, 237, 0.92), rgba(255, 255, 255, 0.92));
+  border: 1px solid #f5e6c8;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(246, 179, 59, 0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 180px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.thinking-loader-compact {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-height: 140px;
+  padding: 24px;
+}
+
+.thinking-hive {
+  height: 82px;
+  margin-bottom: 14px;
+  position: relative;
+  width: 78px;
+}
+
+.thinking-cell {
+  animation: hiveThinkPulse 1.4s ease-in-out infinite;
+  background: linear-gradient(135deg, var(--honey), var(--honey-light));
+  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
+  height: 24px;
+  opacity: 0.35;
+  position: absolute;
+  transform-origin: center;
+  width: 28px;
+}
+
+.thinking-cell:nth-child(1) {
+  left: 25px;
+  top: 0;
+}
+
+.thinking-cell:nth-child(2) {
+  left: 0;
+  top: 19px;
+  animation-delay: 0.12s;
+}
+
+.thinking-cell:nth-child(3) {
+  left: 50px;
+  top: 19px;
+  animation-delay: 0.24s;
+}
+
+.thinking-cell:nth-child(4) {
+  left: 25px;
+  top: 38px;
+  animation-delay: 0.36s;
+}
+
+.thinking-cell:nth-child(5) {
+  left: 0;
+  top: 57px;
+  animation-delay: 0.48s;
+}
+
+.thinking-cell:nth-child(6) {
+  left: 50px;
+  top: 57px;
+  animation-delay: 0.6s;
+}
+
+.thinking-loader-text {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.thinking-loader-detail {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 8px 0 0;
+}
+
+.thinking-dots span {
+  animation: thinkingDot 1.2s ease-in-out infinite;
+  display: inline-block;
+  opacity: 0.2;
+}
+
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes hiveThinkPulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes thinkingDot {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.dark .thinking-loader {
+  background: linear-gradient(135deg, rgba(26, 24, 16, 0.92), rgba(13, 13, 22, 0.92));
+  border-color: #2a2520;
+  box-shadow: 0 12px 30px rgba(246, 179, 59, 0.08);
+}
+
+.dark .thinking-loader-compact {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
 /* ===== 16. Responsive ===== */
 @media (max-width: 1024px) {
   .metric-cards-row {
@@ -1822,6 +2123,11 @@ code {
 
   .analysis-top-row {
     grid-template-columns: 1fr;
+  }
+
+  .analysis-refresh-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .settings-bottom-row {
@@ -2385,3 +2691,123 @@ code {
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
+
+/* Refined warning and ledger table presentation */
+.fund-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px 11px 16px;
+  background: linear-gradient(135deg, #fff9ed 0%, #fffdf8 100%);
+  border: 1px solid #f5e6c8;
+  border-left: 4px solid var(--honey);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.fund-warning-chip {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(246, 179, 59, 0.14);
+  color: #8a6d2b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.fund-warning-text {
+  font-size: 0.88rem;
+  color: #72571f;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.holdings-ledger-table th,
+.holdings-ledger-table td {
+  white-space: nowrap;
+}
+
+.holdings-ledger-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+.ledger-source-cell {
+  max-width: 260px;
+  color: var(--muted);
+}
+
+.dark .fund-warning-banner {
+  background: linear-gradient(135deg, #1a1810 0%, #14120c 100%);
+  border-color: #2a2520;
+  border-left-color: #c9a84c;
+}
+
+.dark .fund-warning-chip {
+  background: rgba(201, 168, 76, 0.16);
+  color: #d7bd68;
+}
+
+.dark .fund-warning-text {
+  color: #c9a84c;
+}
+
+/* Dashboard exposure table containment */
+.charts-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.chart-card {
+  min-width: 0;
+}
+
+.exposure-table-card {
+  overflow: hidden;
+}
+
+.ledger-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.exposure-ledger-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.exposure-ledger-table th,
+.exposure-ledger-table td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.exposure-col-ticker {
+  width: 11%;
+}
+
+.exposure-col-type {
+  width: 13%;
+}
+
+.exposure-col-value {
+  width: 14%;
+}
+
+.exposure-col-lookthrough {
+  width: 18%;
+}
+
+.exposure-col-percent {
+  width: 11%;
+}
+
+.exposure-col-sources {
+  width: 19%;
+}
+

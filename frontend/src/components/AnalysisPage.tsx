@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import {
     PieChart,
     Pie,
@@ -11,7 +12,9 @@ import type {
     PortfolioAnalysisFacts,
     PortfolioExposure,
     AnalysisAssetType,
+    PriceMode,
 } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const ASSET_COLORS: Record<string, string> = {
     STOCK: '#4F86F7',
@@ -141,29 +144,42 @@ function formatPercent(value: number): string {
 
 interface AnalysisPageProps {
     isDark?: boolean;
+    refreshTrigger?: number;
+    priceMode?: PriceMode;
 }
 
-export function AnalysisPage({ isDark }: AnalysisPageProps) {
+export function AnalysisPage({ isDark, refreshTrigger = 0, priceMode = 'BEST_AVAILABLE' }: AnalysisPageProps) {
     const [facts, setFacts] = useState<PortfolioAnalysisFacts | null>(null);
     const [exposure, setExposure] = useState<PortfolioExposure | null>(null);
     const [aiText, setAiText] = useState('');
     const [isAiStreaming, setIsAiStreaming] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [manualRefreshKey, setManualRefreshKey] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
+        const controller = new AbortController();
         async function load() {
             setIsLoading(true);
             setAiText('');
             setIsAiStreaming(true);
             try {
                 const [analysisFacts, nextExposure] = await Promise.all([
-                    fetchAnalysisInsightsFull((token) => {
-                        if (!cancelled) {
-                            setAiText((prev) => prev + token);
-                        }
+                    fetchAnalysisInsightsFull({
+                        signal: controller.signal,
+                        onToken: (token) => {
+                            if (!cancelled) {
+                                setAiText((prev) => prev + token);
+                            }
+                        },
+                        onDone: () => {
+                            if (!cancelled) {
+                                setIsAiStreaming(false);
+                            }
+                        },
+                        priceMode,
                     }),
-                    fetchPortfolioExposure(true),
+                    fetchPortfolioExposure(true, priceMode),
                 ]);
                 if (!cancelled) {
                     setFacts(analysisFacts);
@@ -171,16 +187,21 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                 }
             } catch {
                 // keep empty on failure
+                if (!cancelled) {
+                    setIsAiStreaming(false);
+                }
             } finally {
                 if (!cancelled) {
                     setIsLoading(false);
-                    setIsAiStreaming(false);
                 }
             }
         }
         load();
-        return () => { cancelled = true; };
-    }, []);
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
+    }, [refreshTrigger, manualRefreshKey, priceMode]);
 
     const overview = facts?.overview;
     const concentration = facts?.concentration;
@@ -292,19 +313,41 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
 
     return (
         <div className="analysis-page-wrapper">
+            <section className="analysis-page-section">
+                <div className="analysis-refresh-card">
+                    <div>
+                        <p className="analysis-refresh-title">Portfolio analysis</p>
+                        <p className="analysis-refresh-detail">
+                            Refreshes automatically after holdings change. Use manual refresh after market data changes.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="analysis-refresh-button"
+                        disabled={isLoading || isAiStreaming}
+                        onClick={() => setManualRefreshKey((key) => key + 1)}
+                    >
+                        <RefreshCw size={15} className={isLoading || isAiStreaming ? 'spin-icon' : undefined}/>
+                        {isLoading || isAiStreaming ? 'Updating' : 'Refresh analysis'}
+                    </button>
+                </div>
+            </section>
+
+            {isLoading && !facts && (
+                <section className="analysis-page-section">
+                    <ThinkingLoader
+                        label="Thinking through portfolio risk"
+                        detail="Loading allocation, concentration, look-through exposure, and AI insight stream."
+                    />
+                </section>
+            )}
+
             {overlapWarnings.length > 0 && (
                 <section className="analysis-page-section">
                     <div className="analysis-card">
                         {overlapWarnings.map((w, i) => (
-                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                <svg width="18" height="18" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: 1 }}>
-                                    <polygon
-                                        points="10,2 17.66,6.5 17.66,13.5 10,18 2.34,13.5 2.34,6.5"
-                                        fill="none"
-                                        stroke="#f6b33b"
-                                        strokeWidth="1.5"
-                                    />
-                                </svg>
+                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0 }}>
+                                <span className="fund-warning-chip">Look-through</span>
                                 <span className="fund-warning-text">{w}</span>
                             </div>
                         ))}
@@ -499,10 +542,10 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                                     <td className="ledger-symbol">{p.ticker}</td>
                                     <td>{formatMoneyFull(p.marketValue)}</td>
                                     <td>{formatMoneyFull(p.costBasis)}</td>
-                                    <td style={{color: p.unrealizedPnl >= 0 ? '#27ae60' : '#e74c3c', fontWeight: 600}}>
+                                    <td className={p.unrealizedPnl >= 0 ? 'ledger-pl-positive' : 'ledger-pl-negative'}>
                                         {p.unrealizedPnl >= 0 ? '+' : ''}{formatMoneyFull(p.unrealizedPnl)}
                                     </td>
-                                    <td style={{color: (p.unrealizedPnlPercent ?? 0) >= 0 ? '#27ae60' : '#e74c3c'}}>
+                                    <td className={(p.unrealizedPnlPercent ?? 0) >= 0 ? 'ledger-pl-positive' : 'ledger-pl-negative'}>
                                         {p.unrealizedPnlPercent != null ? `${p.unrealizedPnlPercent >= 0 ? '+' : ''}${p.unrealizedPnlPercent.toFixed(2)}%` : '—'}
                                     </td>
                                 </tr>

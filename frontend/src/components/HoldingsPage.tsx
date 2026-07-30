@@ -3,6 +3,7 @@ import { Trash2, Hexagon, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { fetchHoldingsFull, deleteHolding, updateHolding } from '../api/portfolioApi';
 import type { HoldingResponse, PriceMode } from '../api/types';
+import { ThinkingLoader } from './ThinkingLoader';
 
 const FILTERS = ['All', 'Priced', 'Unpriced', 'High gain'];
 
@@ -48,11 +49,11 @@ function getPriceStatusLabel(status: string): string {
 interface HoldingsPageProps {
     isDark?: boolean;
     refreshTrigger?: number;
+    priceMode?: PriceMode;
+    onHoldingsChanged?: () => void;
 }
 
-const PRICE_MODE: PriceMode = 'DEMO_ALLOWED';
-
-export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
+export function HoldingsPage({ isDark, refreshTrigger, priceMode = 'BEST_AVAILABLE', onHoldingsChanged }: HoldingsPageProps) {
     const [activeFilter, setActiveFilter] = useState('All');
     const [holdings, setHoldings] = useState<HoldingRow[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -68,14 +69,14 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await fetchHoldingsFull(PRICE_MODE);
+            const data = await fetchHoldingsFull(priceMode);
             setHoldings(buildHoldingRows(data));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load holdings.');
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [priceMode]);
 
     useEffect(() => {
         let cancelled = false;
@@ -89,14 +90,19 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
 
     const handleDelete = useCallback(async (id: number, ticker: string) => {
         try {
-            await deleteHolding(id);
-            toast.success(`${ticker} removed. Allocation and totals updated.`);
-            await loadHoldings();
+            const status = await deleteHolding(id);
+            toast.success(`Removed ${ticker} successfully (HTTP ${status}). Allocation and totals updated.`);
             setDeleteConfirmId(null);
-        } catch {
-            toast.error(`Failed to delete ${ticker}.`);
+            if (onHoldingsChanged) {
+                onHoldingsChanged();
+            } else {
+                await loadHoldings();
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : `Remove holding failed: ${ticker}`;
+            toast.error(message);
         }
-    }, [loadHoldings]);
+    }, [loadHoldings, onHoldingsChanged]);
 
     const openEdit = useCallback((row: HoldingRow) => {
         setEditTarget(row);
@@ -128,17 +134,21 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
             await updateHolding(editTarget.id, {
                 quantity: qty,
                 averagePurchasePrice: editTarget.assetType === 'CASH' || editTarget.assetType === 'BANK_DEPOSIT' ? 1.00 : avgPrice,
-            }, PRICE_MODE);
+            }, priceMode);
             toast.success(`${editTarget.ticker} updated.`);
             closeEdit();
-            await loadHoldings();
+            if (onHoldingsChanged) {
+                onHoldingsChanged();
+            } else {
+                await loadHoldings();
+            }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to update holding.';
             toast.error(message);
         } finally {
             setIsUpdating(false);
         }
-    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings]);
+    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings, onHoldingsChanged, priceMode]);
 
     const filteredHoldings = holdings.filter((row) => {
         if (activeFilter === 'All') return true;
@@ -183,7 +193,11 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
 
                     {isLoading ? (
                         <div className="holdings-empty-state">
-                            <p className="holdings-empty-text">Loading holdings...</p>
+                            <ThinkingLoader
+                                compact
+                                label="Thinking through holdings"
+                                detail="Refreshing quantities, prices, and unrealized P/L."
+                            />
                         </div>
                     ) : filteredHoldings.length === 0 && !error ? (
                         <div className="holdings-empty-state">
