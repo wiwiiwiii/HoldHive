@@ -138,7 +138,7 @@ public class DeepSeekClient {
             Consumer<Throwable> onError) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             log.warn("holdhive.llm.api-key is not set - skipping DeepSeek stream and returning a fallback message");
-            onToken.accept("AI 解读功能暂未配置，以下仅展示结构化数据。");
+            onToken.accept("AI commentary is not configured. Only structured data is shown below.");
             onComplete.run();
             return;
         }
