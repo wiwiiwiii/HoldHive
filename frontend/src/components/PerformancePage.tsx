@@ -8,7 +8,7 @@ import {
     Tooltip,
 } from 'recharts';
 import { fetchHoldingsFull, fetchPortfolioSummary } from '../api/portfolioApi';
-import type { HoldingResponse, PortfolioSummaryResponse } from '../api/types';
+import type { HoldingResponse, PortfolioSummaryResponse, PriceMode } from '../api/types';
 import { ThinkingLoader } from './ThinkingLoader';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -58,7 +58,11 @@ interface InsightCard {
     color: string;
 }
 
-export function PerformancePage() {
+interface PerformancePageProps {
+    priceMode?: PriceMode;
+}
+
+export function PerformancePage({ priceMode = 'BEST_AVAILABLE' }: PerformancePageProps) {
     const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +72,10 @@ export function PerformancePage() {
         async function load() {
             setIsLoading(true);
             try {
-                const [data, sum] = await Promise.all([fetchHoldingsFull(), fetchPortfolioSummary()]);
+                const [data, sum] = await Promise.all([
+                    fetchHoldingsFull(priceMode),
+                    fetchPortfolioSummary(priceMode),
+                ]);
                 if (!cancelled) {
                     setHoldings(data);
                     setSummary(sum);
@@ -83,7 +90,7 @@ export function PerformancePage() {
         }
         load();
         return () => { cancelled = true; };
-    }, []);
+    }, [priceMode]);
 
     const chartData = useMemo((): PerformancePoint[] => {
         if (!summary || summary.totalMarketValue <= 0) return [];

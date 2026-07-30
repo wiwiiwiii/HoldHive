@@ -2691,3 +2691,66 @@ code {
   line-height: 1.6;
   letter-spacing: 0.01em;
 }
+
+/* Refined warning and ledger table presentation */
+.fund-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px 11px 16px;
+  background: linear-gradient(135deg, #fff9ed 0%, #fffdf8 100%);
+  border: 1px solid #f5e6c8;
+  border-left: 4px solid var(--honey);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.fund-warning-chip {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(246, 179, 59, 0.14);
+  color: #8a6d2b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.fund-warning-text {
+  font-size: 0.88rem;
+  color: #72571f;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.holdings-ledger-table th,
+.holdings-ledger-table td {
+  white-space: nowrap;
+}
+
+.holdings-ledger-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+.ledger-source-cell {
+  max-width: 260px;
+  color: var(--muted);
+}
+
+.dark .fund-warning-banner {
+  background: linear-gradient(135deg, #1a1810 0%, #14120c 100%);
+  border-color: #2a2520;
+  border-left-color: #c9a84c;
+}
+
+.dark .fund-warning-chip {
+  background: rgba(201, 168, 76, 0.16);
+  color: #d7bd68;
+}
+
+.dark .fund-warning-text {
+  color: #c9a84c;
+}

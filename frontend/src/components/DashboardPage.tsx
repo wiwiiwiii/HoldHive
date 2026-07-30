@@ -18,6 +18,7 @@ import type {
     HoldingResponse,
     PortfolioExposure,
     PortfolioSummaryResponse,
+    PriceMode,
     PriceStatus,
 } from '../api/types';
 import { ThinkingLoader } from './ThinkingLoader';
@@ -91,7 +92,11 @@ function getPriceStatusLabel(status: PriceStatus): string {
     }
 }
 
-export function DashboardPage() {
+interface DashboardPageProps {
+    priceMode?: PriceMode;
+}
+
+export function DashboardPage({ priceMode = 'BEST_AVAILABLE' }: DashboardPageProps) {
     const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
     const [holdings, setHoldings] = useState<HoldingResponse[]>([]);
     const [fundLookthrough, setFundLookthrough] = useState<FundLookthroughResponse | null>(null);
@@ -104,9 +109,9 @@ export function DashboardPage() {
         setError(null);
         try {
             const [nextSummary, nextHoldings, nextExposure] = await Promise.all([
-                fetchPortfolioSummary(),
-                fetchHoldingsFull(),
-                fetchPortfolioExposure(true),
+                fetchPortfolioSummary(priceMode),
+                fetchHoldingsFull(priceMode),
+                fetchPortfolioExposure(true, priceMode),
             ]);
             setSummary(nextSummary);
             setHoldings(nextHoldings);
@@ -121,7 +126,7 @@ export function DashboardPage() {
 
     useEffect(() => {
         void refreshSummary();
-    }, []);
+    }, [priceMode]);
 
     async function refreshFundLookthrough(nextSummary: PortfolioSummaryResponse) {
         const firstFund = nextSummary.allocations.find(
@@ -417,15 +422,8 @@ export function DashboardPage() {
                         {exposureWarnings.length > 0 && (
                             <div style={{ marginBottom: 16 }}>
                                 {exposureWarnings.map((w, i) => (
-                                    <div key={i} className="fund-warning-banner" style={{ marginBottom: i < exposureWarnings.length - 1 ? 10 : 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                        <svg width="18" height="18" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: 1 }}>
-                                            <polygon
-                                                points="10,2 17.66,6.5 17.66,13.5 10,18 2.34,13.5 2.34,6.5"
-                                                fill="none"
-                                                stroke="#f6b33b"
-                                                strokeWidth="1.5"
-                                            />
-                                        </svg>
+                                    <div key={i} className="fund-warning-banner" style={{ marginBottom: i < exposureWarnings.length - 1 ? 10 : 0 }}>
+                                        <span className="fund-warning-chip">Exposure</span>
                                         <span className="fund-warning-text">{w}</span>
                                     </div>
                                 ))}
@@ -452,10 +450,7 @@ export function DashboardPage() {
                                     <td>{item.fundLookthroughMarketValue > 0 ? formatMoney(item.fundLookthroughMarketValue) : '—'}</td>
                                     <td className="ledger-value">{formatMoney(item.totalExposureValue)}</td>
                                     <td>{formatPercent(item.exposurePercent * 100)}</td>
-                                    <td style={{
-                                        fontSize: '0.78rem',
-                                        color: 'var(--muted)'
-                                    }}>{item.sources.join(', ')}</td>
+                                    <td className="ledger-source-cell" title={item.sources.join(', ')}>{item.sources.join(', ')}</td>
                                 </tr>
                             ))}
                             </tbody>

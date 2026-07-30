@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createHolding, deleteHolding } from '../api/portfolioApi';
+import { createHolding, deleteHolding, fetchAnalysisInsightsFull } from '../api/portfolioApi';
 
 describe('portfolioApi holding mutations', () => {
   afterEach(() => {
@@ -57,5 +57,38 @@ describe('portfolioApi holding mutations', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 204 })));
 
     await expect(deleteHolding(99)).resolves.toBe(204);
+  });
+
+  it('adds priceMode to the analysis full-stream URL', async () => {
+    let createdUrl = '';
+
+    class MockEventSource {
+      private listeners: Record<string, ((event: MessageEvent) => void)[]> = {};
+      onerror: (() => void) | null = null;
+
+      constructor(url: string) {
+        createdUrl = url;
+        queueMicrotask(() => {
+          this.listeners.facts?.forEach((listener) => listener(new MessageEvent('facts', {
+            data: JSON.stringify({ payload: { overview: { totalMarketValue: 0, allocations: [] } } }),
+          })));
+          this.listeners.done?.forEach((listener) => listener(new MessageEvent('done')));
+        });
+      }
+
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        this.listeners[type] = [...(this.listeners[type] ?? []), listener];
+      }
+
+      close() {
+        // no-op for tests
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    await fetchAnalysisInsightsFull({ priceMode: 'LIVE_ONLY' });
+
+    expect(createdUrl).toContain('/portfolio/analysis/insights/full?priceMode=LIVE_ONLY');
   });
 });

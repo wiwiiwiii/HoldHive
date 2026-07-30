@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 
-import { fetchAnalysisInsightsFull } from '../api/portfolioApi';
+import { fetchAnalysisInsightsFull, fetchPortfolioExposure } from '../api/portfolioApi';
 import { AnalysisPage } from '../components/AnalysisPage';
 
 vi.mock('../api/portfolioApi', () => {
@@ -53,7 +53,7 @@ vi.mock('../api/portfolioApi', () => {
   };
 
   return {
-    fetchAnalysisInsightsFull: vi.fn(async (options?: { onToken?: (text: string) => void; onDone?: () => void }) => {
+    fetchAnalysisInsightsFull: vi.fn(async (options?: { onToken?: (text: string) => void; onDone?: () => void; priceMode?: string }) => {
       options?.onToken?.('### Overview\n- Portfolio refreshed.\n');
       options?.onDone?.();
       return facts;
@@ -88,5 +88,16 @@ describe('AnalysisPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /refresh analysis/i }));
 
     await waitFor(() => expect(fetchAnalysisInsightsFull).toHaveBeenCalledTimes(3));
+  });
+
+  it('uses the selected data mode for analysis facts and exposure', async () => {
+    render(<AnalysisPage refreshTrigger={0} priceMode="LIVE_ONLY" />);
+
+    await waitFor(() => {
+      expect(fetchAnalysisInsightsFull).toHaveBeenCalledWith(expect.objectContaining({
+        priceMode: 'LIVE_ONLY',
+      }));
+      expect(fetchPortfolioExposure).toHaveBeenCalledWith(true, 'LIVE_ONLY');
+    });
   });
 });

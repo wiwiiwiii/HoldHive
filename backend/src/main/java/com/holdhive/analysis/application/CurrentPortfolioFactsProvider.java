@@ -38,8 +38,13 @@ public class CurrentPortfolioFactsProvider {
      *         market value cannot feed the L0-L4 calculators).
      */
     public CurrentPortfolioHoldings currentHoldings() {
+        return currentHoldings(PriceMode.BEST_AVAILABLE);
+    }
+
+    public CurrentPortfolioHoldings currentHoldings(PriceMode priceMode) {
+        PriceMode resolvedPriceMode = priceMode == null ? PriceMode.BEST_AVAILABLE : priceMode;
         String baseCurrency = portfolioHoldingReader.findDefaultPortfolio().baseCurrency();
-        List<HoldingFact> facts = holdingQueryService.listHoldings(null, PriceMode.BEST_AVAILABLE).items().stream()
+        List<HoldingFact> facts = holdingQueryService.listHoldings(null, resolvedPriceMode).items().stream()
                 .filter(holding -> holding.marketValue() != null)
                 .map(holding -> new HoldingFact(
                         holding.ticker(),

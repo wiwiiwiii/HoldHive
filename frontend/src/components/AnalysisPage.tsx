@@ -12,6 +12,7 @@ import type {
     PortfolioAnalysisFacts,
     PortfolioExposure,
     AnalysisAssetType,
+    PriceMode,
 } from '../api/types';
 import { ThinkingLoader } from './ThinkingLoader';
 
@@ -144,9 +145,10 @@ function formatPercent(value: number): string {
 interface AnalysisPageProps {
     isDark?: boolean;
     refreshTrigger?: number;
+    priceMode?: PriceMode;
 }
 
-export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) {
+export function AnalysisPage({ isDark, refreshTrigger = 0, priceMode = 'BEST_AVAILABLE' }: AnalysisPageProps) {
     const [facts, setFacts] = useState<PortfolioAnalysisFacts | null>(null);
     const [exposure, setExposure] = useState<PortfolioExposure | null>(null);
     const [aiText, setAiText] = useState('');
@@ -175,8 +177,9 @@ export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) 
                                 setIsAiStreaming(false);
                             }
                         },
+                        priceMode,
                     }),
-                    fetchPortfolioExposure(true),
+                    fetchPortfolioExposure(true, priceMode),
                 ]);
                 if (!cancelled) {
                     setFacts(analysisFacts);
@@ -198,7 +201,7 @@ export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) 
             cancelled = true;
             controller.abort();
         };
-    }, [refreshTrigger, manualRefreshKey]);
+    }, [refreshTrigger, manualRefreshKey, priceMode]);
 
     const overview = facts?.overview;
     const concentration = facts?.concentration;
@@ -343,15 +346,8 @@ export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) 
                 <section className="analysis-page-section">
                     <div className="analysis-card">
                         {overlapWarnings.map((w, i) => (
-                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                                <svg width="18" height="18" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: 1 }}>
-                                    <polygon
-                                        points="10,2 17.66,6.5 17.66,13.5 10,18 2.34,13.5 2.34,6.5"
-                                        fill="none"
-                                        stroke="#f6b33b"
-                                        strokeWidth="1.5"
-                                    />
-                                </svg>
+                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0 }}>
+                                <span className="fund-warning-chip">Look-through</span>
                                 <span className="fund-warning-text">{w}</span>
                             </div>
                         ))}
@@ -546,10 +542,10 @@ export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) 
                                     <td className="ledger-symbol">{p.ticker}</td>
                                     <td>{formatMoneyFull(p.marketValue)}</td>
                                     <td>{formatMoneyFull(p.costBasis)}</td>
-                                    <td style={{color: p.unrealizedPnl >= 0 ? '#27ae60' : '#e74c3c', fontWeight: 600}}>
+                                    <td className={p.unrealizedPnl >= 0 ? 'ledger-pl-positive' : 'ledger-pl-negative'}>
                                         {p.unrealizedPnl >= 0 ? '+' : ''}{formatMoneyFull(p.unrealizedPnl)}
                                     </td>
-                                    <td style={{color: (p.unrealizedPnlPercent ?? 0) >= 0 ? '#27ae60' : '#e74c3c'}}>
+                                    <td className={(p.unrealizedPnlPercent ?? 0) >= 0 ? 'ledger-pl-positive' : 'ledger-pl-negative'}>
                                         {p.unrealizedPnlPercent != null ? `${p.unrealizedPnlPercent >= 0 ? '+' : ''}${p.unrealizedPnlPercent.toFixed(2)}%` : '—'}
                                     </td>
                                 </tr>

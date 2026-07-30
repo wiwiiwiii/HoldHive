@@ -49,12 +49,11 @@ function getPriceStatusLabel(status: string): string {
 interface HoldingsPageProps {
     isDark?: boolean;
     refreshTrigger?: number;
+    priceMode?: PriceMode;
     onHoldingsChanged?: () => void;
 }
 
-const PRICE_MODE: PriceMode = 'DEMO_ALLOWED';
-
-export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: HoldingsPageProps) {
+export function HoldingsPage({ isDark, refreshTrigger, priceMode = 'BEST_AVAILABLE', onHoldingsChanged }: HoldingsPageProps) {
     const [activeFilter, setActiveFilter] = useState('All');
     const [holdings, setHoldings] = useState<HoldingRow[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -70,14 +69,14 @@ export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: Hold
         setIsLoading(true);
         setError(null);
         try {
-            const data = await fetchHoldingsFull(PRICE_MODE);
+            const data = await fetchHoldingsFull(priceMode);
             setHoldings(buildHoldingRows(data));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load holdings.');
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [priceMode]);
 
     useEffect(() => {
         let cancelled = false;
@@ -135,7 +134,7 @@ export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: Hold
             await updateHolding(editTarget.id, {
                 quantity: qty,
                 averagePurchasePrice: editTarget.assetType === 'CASH' || editTarget.assetType === 'BANK_DEPOSIT' ? 1.00 : avgPrice,
-            }, PRICE_MODE);
+            }, priceMode);
             toast.success(`${editTarget.ticker} updated.`);
             closeEdit();
             if (onHoldingsChanged) {
@@ -149,7 +148,7 @@ export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: Hold
         } finally {
             setIsUpdating(false);
         }
-    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings, onHoldingsChanged]);
+    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings, onHoldingsChanged, priceMode]);
 
     const filteredHoldings = holdings.filter((row) => {
         if (activeFilter === 'All') return true;

@@ -1,8 +1,13 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
 
 import { App } from '../App';
 
 describe('App', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('renders the HoldHive gateway page', () => {
     render(<App />);
 
@@ -98,5 +103,64 @@ describe('App', () => {
 
     expect(holdingsPortal).toHaveAttribute('data-state', 'idle');
     expect(screen.queryByTestId('gateway-node-glow-holdings')).not.toBeInTheDocument();
+  });
+
+  it('applies the selected data mode to portfolio data requests', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.includes('/portfolio/summary')) {
+        return new Response(JSON.stringify({
+          portfolioId: 1,
+          portfolioName: 'Demo',
+          baseCurrency: 'USD',
+          holdingCount: 0,
+          pricedHoldingCount: 0,
+          valuationStatus: 'EMPTY',
+          totalCostBasis: 0,
+          totalMarketValue: 0,
+          totalUnrealizedGainLoss: 0,
+          totalUnrealizedGainLossPercent: null,
+          priceAsOf: null,
+          allocations: [],
+          unpricedHoldings: [],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (url.includes('/holdings')) {
+        return new Response(JSON.stringify({ items: [], count: 0 }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (url.includes('/portfolio/exposure')) {
+        return new Response(JSON.stringify({
+          portfolioId: 1,
+          portfolioName: 'Demo',
+          baseCurrency: 'USD',
+          lookthrough: true,
+          priceMode: 'LIVE_ONLY',
+          totalMarketValue: 0,
+          items: [],
+          warnings: [],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: /settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /live only/i }));
+    fireEvent.click(screen.getByRole('button', { name: /dashboard/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/portfolio/summary?priceMode=LIVE_ONLY'));
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/holdings?priceMode=LIVE_ONLY'));
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/portfolio/exposure?lookthrough=true&priceMode=LIVE_ONLY'));
+    });
   });
 });

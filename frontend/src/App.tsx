@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useState, useCallback, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   Hexagon,
   LayoutDashboard,
@@ -9,7 +9,6 @@ import {
   Plus,
   Moon,
   Sun,
-  Activity,
 } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { DashboardPage } from './components/DashboardPage';
@@ -19,6 +18,7 @@ import { PerformancePage } from './components/PerformancePage';
 import { AnalysisPage } from './components/AnalysisPage';
 import { SettingsPage } from './components/SettingsPage';
 import { AddHoldingPage } from './components/AddHoldingPage';
+import type { PriceMode } from './api/types';
 
 
 const NAV_ITEMS = [
@@ -52,9 +52,9 @@ export function App() {
   const [isDark, setIsDark] = useState(false);
   const [showAddHolding, setShowAddHolding] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [priceMode, setPriceMode] = useState<PriceMode>('BEST_AVAILABLE');
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
   const [isSidebarResizing, setIsSidebarResizing] = useState(false);
-  const addHoldingRef = useRef<{ reset: () => void } | null>(null);
 
   const pageInfo = PAGE_INFO[activeNav] ?? PAGE_INFO.Dashboard;
 
@@ -102,19 +102,29 @@ export function App() {
     if (activeNav === 'Gateway') {
       return <GatewayPage onNavigate={handleNavClick} onAddHolding={handleAddClick} isDark={isDark} />;
     }
-    if (activeNav === 'Dashboard') return <DashboardPage />;
+    if (activeNav === 'Dashboard') return <DashboardPage priceMode={priceMode} />;
     if (activeNav === 'Holdings') {
       return (
           <HoldingsPage
               isDark={isDark}
               refreshTrigger={refreshKey}
+              priceMode={priceMode}
               onHoldingsChanged={handleHoldingsChanged}
           />
       );
     }
-    if (activeNav === 'Performance') return <PerformancePage />;
-    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} refreshTrigger={refreshKey} />;
-    if (activeNav === 'Settings') return <SettingsPage isDark={isDark} onThemeChange={setIsDark} />;
+    if (activeNav === 'Performance') return <PerformancePage priceMode={priceMode} />;
+    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} refreshTrigger={refreshKey} priceMode={priceMode} />;
+    if (activeNav === 'Settings') {
+      return (
+          <SettingsPage
+              isDark={isDark}
+              onThemeChange={setIsDark}
+              dataMode={priceMode}
+              onDataModeChange={setPriceMode}
+          />
+      );
+    }
     return (
         <div className="placeholder-page">
           <Hexagon size={48} className="placeholder-icon" />

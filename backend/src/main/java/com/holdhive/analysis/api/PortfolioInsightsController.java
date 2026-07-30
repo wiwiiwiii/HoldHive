@@ -5,6 +5,7 @@ import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -13,6 +14,7 @@ import com.holdhive.analysis.application.CurrentPortfolioFactsProvider;
 import com.holdhive.analysis.application.CurrentPortfolioFactsProvider.CurrentPortfolioHoldings;
 import com.holdhive.analysis.application.PortfolioAnalysisFacts;
 import com.holdhive.analysis.application.PortfolioAnalysisService;
+import com.holdhive.pricing.application.PriceMode;
 
 /**
  * Serves the layered portfolio analysis (L0-L4 + sector exposure) for the
@@ -43,8 +45,10 @@ public class PortfolioInsightsController {
      * No LLM call is made here - this is deterministic and fast.
      */
     @GetMapping("/insights")
-    public PortfolioAnalysisFacts insights() {
-        CurrentPortfolioHoldings holdings = currentPortfolioFactsProvider.currentHoldings();
+    public PortfolioAnalysisFacts insights(
+            @RequestParam(defaultValue = "BEST_AVAILABLE") PriceMode priceMode
+    ) {
+        CurrentPortfolioHoldings holdings = currentPortfolioFactsProvider.currentHoldings(priceMode);
         return portfolioAnalysisService.computeFacts(holdings.holdings());
     }
 
@@ -57,9 +61,11 @@ public class PortfolioInsightsController {
      * module).
      */
     @GetMapping(value = "/insights/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter insightsStream() {
+    public SseEmitter insightsStream(
+            @RequestParam(defaultValue = "BEST_AVAILABLE") PriceMode priceMode
+    ) {
         SseEmitter emitter = new SseEmitter(180_000L);
-        CurrentPortfolioHoldings holdings = currentPortfolioFactsProvider.currentHoldings();
+        CurrentPortfolioHoldings holdings = currentPortfolioFactsProvider.currentHoldings(priceMode);
 
         Thread.ofVirtual().start(() -> portfolioAnalysisService.streamNarrative(
                 holdings.baseCurrency(),
@@ -88,11 +94,13 @@ public class PortfolioInsightsController {
      * can render the data cards; only the narrative section is degraded.
      */
     @GetMapping(value = "/insights/full", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter insightsFull() {
+    public SseEmitter insightsFull(
+            @RequestParam(defaultValue = "BEST_AVAILABLE") PriceMode priceMode
+    ) {
         SseEmitter emitter = new SseEmitter(180_000L);
 
         // 1. Fetch holdings once (single DB query)
-        CurrentPortfolioHoldings holdings = currentPortfolioFactsProvider.currentHoldings();
+        CurrentPortfolioHoldings holdings = currentPortfolioFactsProvider.currentHoldings(priceMode);
 
         // 2. Compute facts once (single fund-holdings prefetch)
         PortfolioAnalysisFacts facts = portfolioAnalysisService.computeFacts(holdings.holdings());

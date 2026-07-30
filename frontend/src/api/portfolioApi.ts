@@ -235,17 +235,21 @@ export interface AnalysisInsightStreamOptions {
   onDone?: () => void;
   onError?: (error: Error) => void;
   signal?: AbortSignal;
+  priceMode?: PriceMode;
 }
 
 export async function fetchAnalysisInsightsFull(
     options?: ((text: string) => void) | AnalysisInsightStreamOptions
 ): Promise<PortfolioAnalysisFacts> {
   return new Promise((resolve, reject) => {
-    const es = new EventSource(`${API_BASE_URL}/portfolio/analysis/insights/full`);
     let facts: PortfolioAnalysisFacts | null = null;
     let isClosed = false;
     const streamOptions: AnalysisInsightStreamOptions =
         typeof options === 'function' ? { onToken: options } : options ?? {};
+    const params = new URLSearchParams({
+      priceMode: streamOptions.priceMode ?? 'BEST_AVAILABLE',
+    });
+    const es = new EventSource(`${API_BASE_URL}/portfolio/analysis/insights/full?${params.toString()}`);
 
     const closeStream = () => {
       if (isClosed) return;

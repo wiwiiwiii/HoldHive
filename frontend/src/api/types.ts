@@ -10,7 +10,7 @@ export type PriceStatus = 'LIVE' | 'CACHED' | 'DEMO' | 'FIXED' | 'UNAVAILABLE';
 
 export type ValuationStatus = 'EMPTY' | 'COMPLETE' | 'PARTIAL' | 'UNAVAILABLE';
 
-export type PriceMode = 'BEST_AVAILABLE' | 'DEMO_ALLOWED';
+export type PriceMode = 'BEST_AVAILABLE' | 'LIVE_ONLY' | 'DEMO_ALLOWED';
 
 export interface HoldingResponse {
   id: number;
@@ -269,4 +269,3 @@ export interface PortfolioAnalysisFacts {
   sectorExposure: AnalysisSectorExposure;
   profitLoss: AnalysisProfitLoss;
 }
-
