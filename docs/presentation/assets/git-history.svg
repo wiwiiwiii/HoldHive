@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<rect width="1920" height="1080" fill="#f7f7ff"/>
+<metadata>HEAD 2989b13 | 75 commits / 38 first-parent / chore/presentation-assets-cleanup</metadata>
+<rect x="58.0" y="30.0" width="220.0" height="92.0" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<text x="168.0" y="77.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="34" fill="#333333">Main</text>
+<rect x="374.8" y="30.0" width="220.0" height="92.0" fill="#52cf9d" stroke="#3f3f42" stroke-width="7"/>
+<text x="484.8" y="77.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="34" fill="#333333">Backend</text>
+<rect x="691.6" y="30.0" width="220.0" height="92.0" fill="#f59ac8" stroke="#3f3f42" stroke-width="7"/>
+<text x="801.6" y="77.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="34" fill="#333333">Frontend</text>
+<rect x="1008.4" y="30.0" width="220.0" height="92.0" fill="#a983e6" stroke="#3f3f42" stroke-width="7"/>
+<text x="1118.4" y="77.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="34" fill="#333333">Analysis</text>
+<rect x="1325.2" y="30.0" width="220.0" height="92.0" fill="#ff7b5f" stroke="#3f3f42" stroke-width="7"/>
+<text x="1435.2" y="77.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="34" fill="#333333">Fix</text>
+<rect x="1642.0" y="30.0" width="220.0" height="92.0" fill="#4ec8cc" stroke="#3f3f42" stroke-width="7"/>
+<text x="1752.0" y="77.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="34" fill="#333333">QA</text>
+<path d="M 88.0 395.0 L 1832.0 395.0" fill="none" stroke="#3f3f42" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<g data-branch-category="qa" data-start-index="1" data-draw-start-index="0" data-end-index="4" data-node-count="4">
+<path d="M 88.0 395.0 C 145.4 395.0, 145.4 930.0, 202.9 930.0 L 383.5 930.0 C 440.9 930.0, 440.9 395.0, 498.4 395.0" fill="none" stroke="#3f3f42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="227.5" cy="930.0" r="23" fill="#4ec8cc" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="272.7" cy="930.0" r="23" fill="#4ec8cc" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="317.8" cy="930.0" r="23" fill="#4ec8cc" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="362.9" cy="930.0" r="23" fill="#4ec8cc" stroke="#3f3f42" stroke-width="6"/>
+</g>
+<g data-segment-label="QA #3 / 9 commits"><rect x="207.2" y="855.0" width="172.0" height="34" rx="6" fill="#f7f7ff" stroke="#bdbdc2" stroke-width="2"/>
+<text x="293.2" y="873.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="18" fill="#333333">QA #3 / 9 commits</text>
+</g>
+<g data-branch-category="backend" data-start-index="5" data-draw-start-index="4" data-end-index="8" data-node-count="4">
+<path d="M 498.4 395.0 C 555.8 395.0, 555.8 535.0, 613.3 535.0 L 793.8 535.0 C 851.3 535.0, 851.3 395.0, 908.7 395.0" fill="none" stroke="#3f3f42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="637.9" cy="535.0" r="23" fill="#52cf9d" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="683.0" cy="535.0" r="23" fill="#52cf9d" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="728.2" cy="535.0" r="23" fill="#52cf9d" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="773.3" cy="535.0" r="23" fill="#52cf9d" stroke="#3f3f42" stroke-width="6"/>
+</g>
+<g data-segment-label="Backend #11 / 11 commits"><rect x="585.5" y="574.0" width="236.0" height="34" rx="6" fill="#f7f7ff" stroke="#bdbdc2" stroke-width="2"/>
+<text x="703.5" y="592.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="18" fill="#333333">Backend #11 / 11 commits</text>
+</g>
+<g data-branch-category="analysis" data-start-index="9" data-draw-start-index="7" data-end-index="11" data-node-count="4" data-crossing="allowed">
+<path d="M 806.1 395.0 C 863.6 395.0, 863.6 930.0, 921.0 930.0 L 1101.6 930.0 C 1159.0 930.0, 1159.0 395.0, 1216.5 395.0" fill="none" stroke="#3f3f42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="945.6" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="990.8" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1035.9" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1081.1" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+</g>
+<g data-segment-label="Analysis #14 / 11 commits"><rect x="894.3" y="855.0" width="234.0" height="34" rx="6" fill="#f7f7ff" stroke="#bdbdc2" stroke-width="2"/>
+<text x="1011.3" y="873.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="18" fill="#333333">Analysis #14 / 11 commits</text>
+</g>
+<g data-branch-category="frontend" data-start-index="12" data-draw-start-index="11" data-end-index="14" data-node-count="3">
+<path d="M 1216.5 395.0 C 1259.6 395.0, 1259.6 690.0, 1302.6 690.0 L 1438.1 690.0 C 1481.1 690.0, 1481.1 395.0, 1524.2 395.0" fill="none" stroke="#3f3f42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1327.3" cy="690.0" r="23" fill="#f59ac8" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1370.4" cy="690.0" r="23" fill="#f59ac8" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1413.4" cy="690.0" r="23" fill="#f59ac8" stroke="#3f3f42" stroke-width="6"/>
+</g>
+<g data-segment-label="Frontend #23 / 13 commits"><rect x="1251.4" y="729.0" width="238.0" height="34" rx="6" fill="#f7f7ff" stroke="#bdbdc2" stroke-width="2"/>
+<text x="1370.4" y="747.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="18" fill="#333333">Frontend #23 / 13 commits</text>
+</g>
+<g data-branch-category="analysis" data-start-index="15" data-draw-start-index="13" data-end-index="17" data-node-count="4" data-crossing="allowed">
+<path d="M 1421.6 395.0 C 1479.1 395.0, 1479.1 930.0, 1536.5 930.0 L 1717.1 930.0 C 1774.6 930.0, 1774.6 395.0, 1832.0 395.0" fill="none" stroke="#3f3f42" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1561.2" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1606.3" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1651.4" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+<circle cx="1696.6" cy="930.0" r="23" fill="#a983e6" stroke="#3f3f42" stroke-width="6"/>
+</g>
+<g data-segment-label="Analysis #33 / 15 commits"><rect x="1509.8" y="855.0" width="234.0" height="34" rx="6" fill="#f7f7ff" stroke="#bdbdc2" stroke-width="2"/>
+<text x="1626.8" y="873.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="18" fill="#333333">Analysis #33 / 15 commits</text>
+</g>
+<circle cx="88.0" cy="395.0" r="25" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<circle cx="190.6" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="293.2" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="395.8" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="498.4" cy="395.0" r="25" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<circle cx="600.9" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="703.5" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="806.1" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="908.7" cy="395.0" r="25" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<circle cx="1011.3" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="1113.9" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="1216.5" cy="395.0" r="25" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<circle cx="1319.1" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="1421.6" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="1524.2" cy="395.0" r="25" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<circle cx="1626.8" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="1729.4" cy="395.0" r="18" fill="#aee1fb" stroke="#3f3f42" stroke-width="5"/>
+<circle cx="1832.0" cy="395.0" r="25" fill="#aee1fb" stroke="#3f3f42" stroke-width="7"/>
+<rect x="463.4" y="184.0" width="70.0" height="44" fill="#aee1fb" stroke="#3f3f42" stroke-width="6"/>
+<text x="498.4" y="207.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="23" fill="#333333">#3</text>
+<path d="M 498.4 244.0 L 498.4 365.0 M 498.4 365.0 L 483.4 347.0 M 498.4 365.0 L 513.4 347.0" fill="none" stroke="#3f3f42" stroke-width="6" stroke-linecap="round"/>
+<rect x="873.7" y="184.0" width="70.0" height="44" fill="#aee1fb" stroke="#3f3f42" stroke-width="6"/>
+<text x="908.7" y="207.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="23" fill="#333333">#11</text>
+<path d="M 908.7 244.0 L 908.7 365.0 M 908.7 365.0 L 893.7 347.0 M 908.7 365.0 L 923.7 347.0" fill="none" stroke="#3f3f42" stroke-width="6" stroke-linecap="round"/>
+<rect x="1181.5" y="184.0" width="70.0" height="44" fill="#aee1fb" stroke="#3f3f42" stroke-width="6"/>
+<text x="1216.5" y="207.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="23" fill="#333333">#14</text>
+<path d="M 1216.5 244.0 L 1216.5 365.0 M 1216.5 365.0 L 1201.5 347.0 M 1216.5 365.0 L 1231.5 347.0" fill="none" stroke="#3f3f42" stroke-width="6" stroke-linecap="round"/>
+<rect x="1489.2" y="184.0" width="70.0" height="44" fill="#aee1fb" stroke="#3f3f42" stroke-width="6"/>
+<text x="1524.2" y="207.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="23" fill="#333333">#23</text>
+<path d="M 1524.2 244.0 L 1524.2 365.0 M 1524.2 365.0 L 1509.2 347.0 M 1524.2 365.0 L 1539.2 347.0" fill="none" stroke="#3f3f42" stroke-width="6" stroke-linecap="round"/>
+<rect x="1797.0" y="184.0" width="70.0" height="44" fill="#aee1fb" stroke="#3f3f42" stroke-width="6"/>
+<text x="1832.0" y="207.0" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="23" fill="#333333">#33</text>
+<path d="M 1832.0 244.0 L 1832.0 365.0 M 1832.0 365.0 L 1817.0 347.0 M 1832.0 365.0 L 1847.0 347.0" fill="none" stroke="#3f3f42" stroke-width="6" stroke-linecap="round"/>
+<text x="1886" y="1055" text-anchor="end" font-family="Arial" font-size="17" fill="#66666b">HEAD 2989b13 | 75 commits / 38 first-parent / chore/presentation-assets-cleanup</text>
+</svg>
