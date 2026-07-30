@@ -539,7 +539,7 @@ code {
   padding: 32px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
-  max-width: 1000px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -601,40 +601,40 @@ code {
 
 .hive-map-svg {
   width: 100%;
-  max-width: 720px;
+  max-width: 936px;
   height: auto;
 }
 
 .hive-center-label {
-  font-size: 16px;
+  font-size: 21px;
   font-weight: 700;
   fill: var(--ink);
 }
 
 .hive-center-sub {
-  font-size: 11px;
+  font-size: 14px;
   fill: var(--muted);
 }
 
 .hive-node-label {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   fill: var(--ink);
 }
 
 .hive-node-sub {
-  font-size: 11px;
+  font-size: 14px;
   fill: var(--muted);
 }
 
 .tooltip-title {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   fill: var(--ink);
 }
 
 .tooltip-sub {
-  font-size: 11px;
+  font-size: 14px;
   fill: var(--muted);
 }
 

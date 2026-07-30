@@ -40,4 +40,10 @@ describe('App', () => {
     expect(resizeHandle).toHaveAttribute('aria-valuenow', '180');
     expect(appContainer.style.getPropertyValue('--sidebar-width')).toBe('180px');
   });
+
+  it('renders the enlarged gateway hive map', () => {
+    render(<App />);
+
+    expect(screen.getByTestId('gateway-hive-map')).toHaveAttribute('viewBox', '0 0 1040 728');
+  });
 });
