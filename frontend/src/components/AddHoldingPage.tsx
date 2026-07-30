@@ -72,7 +72,11 @@ export function AddHoldingPage({ isDark, onSaved }: AddHoldingPageProps) {
             setIsSearching(true);
             try {
                 const result = await searchMarket(value.trim());
-                setSearchResults(result.results);
+                const keyword = value.trim().toUpperCase();
+                const filtered = result.results.filter((item) =>
+                    item.ticker.toUpperCase().includes(keyword)
+                );
+                setSearchResults(filtered);
                 setShowSearchDropdown(true);
             } catch {
                 setSearchResults([]);

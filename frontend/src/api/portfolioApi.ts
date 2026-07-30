@@ -3,6 +3,7 @@ import type {
   HoldingResponse,
   MarketQuoteResult,
   MarketSearchResult,
+  PortfolioAnalysisFacts,
   PortfolioExposure,
   PortfolioSummaryResponse,
   PriceMode,
@@ -160,4 +161,35 @@ export async function fetchHoldingsFull(priceMode: PriceMode = 'BEST_AVAILABLE')
 
   const envelope: HoldingListEnvelope = await response.json();
   return envelope.items;
+}
+
+export async function fetchAnalysisInsightsFull(
+    onToken?: (text: string) => void
+): Promise<PortfolioAnalysisFacts> {
+  return new Promise((resolve, reject) => {
+    const es = new EventSource(`${API_BASE_URL}/portfolio/analysis/insights/full`);
+    let facts: PortfolioAnalysisFacts | null = null;
+
+    es.addEventListener('facts', (e) => {
+      const { payload } = JSON.parse((e as MessageEvent).data);
+      facts = payload;
+      if (facts) resolve(facts);
+    });
+
+    es.addEventListener('token', (e) => {
+      const { payload } = JSON.parse((e as MessageEvent).data);
+      onToken?.(payload);
+    });
+
+    es.addEventListener('done', () => {
+      es.close();
+    });
+
+    es.onerror = () => {
+      es.close();
+      if (!facts) {
+        reject(new Error('Failed to connect to analysis endpoint'));
+      }
+    };
+  });
 }
