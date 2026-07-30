@@ -1,0 +1,41 @@
+HoldHive final presentation source notes
+
+Communication job:
+By the end, instructors and project stakeholders should understand how the team turned a broad portfolio-management assignment into a scoped product, built a demo-ready slice, recovered from integration issues, and learned enough to explain the code and process.
+
+Primary reviewed sources:
+- README.md
+- CONTRIBUTING.md
+- docs/README.md
+- docs/guideline/README.md
+- docs/guideline/output/HoldHive final project guide PDF
+- docs/guideline/references/portfolio_manager.md
+- docs/guideline/references/team-project-rules-process.pdf
+- docs/guideline/references/use-of-genai.md
+- docs/guideline/project/team_project_guideline_zh.md
+- docs/guideline/project/technology_stack_zh.md
+- docs/guideline/project/database_design_zh.md
+- docs/guideline/project/api_documentation_zh.md
+- docs/guideline/project/market_data_api_zh.md
+- docs/guideline/project/git_branching_ci_zh.md
+- docs/guideline/project/member_directory_map_zh.md
+- docs/architecture/c4-context.md
+- docs/design/lanhu/README.md
+- docs/demo/demo-script.md
+- docs/qa/acceptance-checklist.md
+- docs/qa/api-test-cases.md
+- docs/qa/defect-log.md
+- docs/adr/ADR-001-technology-stack.md
+- backend/src/main/java/com/holdhive/portfolio/api/HoldingController.java
+- backend/src/main/java/com/holdhive
+- backend/src/main/resources/db/migration
+- backend/src/test/java/com/holdhive
+- frontend/src
+- git log --oneline --decorate --graph --all --max-count=24
+
+Final output:
+- /Users/Will/汇丰/培训/FinalProject/HoldHive/docs/presentation/HoldHive_Final_Project_Presentation.pptx
+- /Users/Will/汇丰/培训/FinalProject/HoldHive/docs/presentation/.build/build_holdhive_presentation.mjs
+- /Users/Will/汇丰/培训/FinalProject/HoldHive/docs/presentation/source-notes.txt
+
+Local QA artifacts are regenerated under docs/presentation/previews/ and ignored by Git.

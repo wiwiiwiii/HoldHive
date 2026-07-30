@@ -75,18 +75,18 @@ THEMES = {
 
 
 HOLDINGS = [
-    ("AAPL", "Apple Inc.", "35", "$210.25", "$7,358.75", "+$1,216.25", "33.8%"),
-    ("TSLA", "Tesla Inc.", "20", "$248.90", "$4,978.00", "+$482.00", "22.8%"),
-    ("AMZN", "Amazon.com Inc.", "10", "$186.70", "$1,867.00", "-$143.00", "8.6%"),
-    ("GOOGL", "Alphabet Inc.", "8", "$179.45", "$1,435.60", "+$238.00", "6.6%"),
-    ("CASH", "Cash Reserve", "-", "$1.00", "$6,155.40", "$0.00", "28.2%"),
+    ("AAPL", "Stock · Apple Inc.", "35", "$210.25", "$7,358.75", "+$1,216.25", "33.1%"),
+    ("BTC", "Crypto · Bitcoin", "0.080", "$66,250.00", "$5,300.00", "+$620.00", "23.8%"),
+    ("CASH", "Cash · USD Reserve", "-", "$1.00", "$4,500.00", "$0.00", "20.2%"),
+    ("VOO", "ETF · Vanguard S&P 500", "6", "$510.40", "$3,062.40", "+$312.40", "13.8%"),
+    ("TSLA", "Stock · Tesla Inc.", "8", "$248.90", "$1,991.20", "-$104.80", "9.0%"),
 ]
 
 ALLOC = [
-    ("Stocks", 63, "#2B7DE9"),
-    ("Cash", 28, "#F6B33B"),
-    ("ETF", 6, "#7557D6"),
-    ("Unpriced", 3, "#A7B0C0"),
+    ("Stocks", 42, "#2B7DE9"),
+    ("Crypto", 24, "#4ED19A"),
+    ("Cash", 20, "#F6B33B"),
+    ("ETF", 14, "#7557D6"),
 ]
 
 
@@ -248,7 +248,7 @@ def donut(cx, cy, theme):
         )
         offset += dash
     s += [
-        text(cx, cy - 4, "$21.8k", 26, theme["text"], 500, "middle"),
+        text(cx, cy - 4, "$22.2k", 26, theme["text"], 500, "middle"),
         text(cx, cy + 24, "priced value", 13, theme["muted"], 400, "middle"),
     ]
     return "".join(s)
@@ -402,9 +402,9 @@ def dashboard(theme_key):
     s = shell(theme, "Dashboard")
     topbar(s, theme, "Dashboard", "Value, allocation, and data status")
     cards = [
-        ("Total Value", "$21,794.75", "+8.9% vs cost", theme["green"]),
-        ("Cost Basis", "$20,001.50", "5 priced holdings", theme["blue"]),
-        ("Unrealized P/L", "+$1,793.25", "partial valuation", theme["green"]),
+        ("Total Value", "$22,212.35", "+10.1% vs cost", theme["green"]),
+        ("Cost Basis", "$20,168.50", "5 priced assets", theme["blue"]),
+        ("Unrealized P/L", "+$2,043.85", "multi-asset snapshot", theme["green"]),
         ("Data Mode", "DEMO", "fixed demo prices", theme["amber"]),
     ]
     for i, c in enumerate(cards):
@@ -426,8 +426,8 @@ def dashboard(theme_key):
         rect(1090, 668, 292, 282, theme["surface"], theme["line"], rx=30, shadow=True),
         text(1122, 716, "Portfolio Notes", 22, theme["text"], 500),
         f'<polygon points="{hexagon_points(1146,780,35)}" fill="{theme["surface2"]}" stroke="{theme["honey"]}" stroke-width="2"/>',
-        text(1196, 770, "AAPL concentration", 17, theme["text"], 500),
-        text(1196, 796, "33.8% of priced value", 14, theme["muted"], 400),
+        text(1196, 770, "Multi-asset mix", 17, theme["text"], 500),
+        text(1196, 796, "Stocks, crypto, ETF, cash", 14, theme["muted"], 400),
         f'<polygon points="{hexagon_points(1146,866,35)}" fill="{theme["surface2"]}" stroke="{theme["amber"]}" stroke-width="2"/>',
         text(1196, 856, "Demo data", 17, theme["text"], 500),
         text(1196, 882, "Fixed values for training", 14, theme["muted"], 400),
@@ -444,9 +444,10 @@ def holdings(theme_key):
         rect(300, 145, 1082, 116, theme["surface"], theme["line"], rx=30, shadow=True),
         text(332, 196, "Quick filters", 21, theme["text"], 500),
         pill(332, 212, 106, 36, "All", theme, theme["surface2"], theme["honey"]),
-        pill(452, 212, 130, 36, "Priced", theme),
-        pill(596, 212, 148, 36, "Unpriced", theme),
-        pill(758, 212, 170, 36, "High gain", theme),
+        pill(452, 212, 116, 36, "Stock", theme),
+        pill(582, 212, 124, 36, "Crypto", theme),
+        pill(720, 212, 106, 36, "Cash", theme),
+        pill(840, 212, 106, 36, "ETF", theme),
         rect(300, 292, 1082, 560, theme["surface"], theme["line"], rx=30, shadow=True),
         text(332, 340, "Holding Ledger", 24, theme["text"], 500),
         holdings_table(326, 370, 1030, theme),
@@ -525,11 +526,16 @@ def add_holding(theme_key):
     s += [
         rect(300, 145, 612, 760, theme["surface"], theme["line"], rx=34, shadow=True),
         text(344, 204, "New holding", 28, theme["text"], 500),
-        text(344, 236, "Ticker, quantity, and average price.", 16, theme["muted"], 400),
+        text(344, 236, "Asset type, symbol, quantity, and average price.", 16, theme["muted"], 400),
     ]
-    fields = [("Ticker", "AAPL", "Uppercase automatically"), ("Quantity", "35", "Must be greater than 0"), ("Average purchase price", "175.50", "Use the same currency as quote")]
+    fields = [
+        ("Asset type", "Stock / ETF / Crypto / Cash", "Cash uses fixed value in base currency"),
+        ("Symbol", "AAPL", "Uppercase automatically"),
+        ("Quantity", "35", "Must be greater than 0"),
+        ("Average purchase price", "175.50", "Use the same currency as quote"),
+    ]
     for i, (label, value, hint) in enumerate(fields):
-        yy = 298 + i * 128
+        yy = 292 + i * 104
         s += [
             text(344, yy, label, 15, theme["muted"], 500),
             rect(344, yy + 18, 502, 58, theme["bg"], theme["line"], rx=18),

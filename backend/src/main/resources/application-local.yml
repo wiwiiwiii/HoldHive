@@ -5,3 +5,11 @@ spring:
     password: ${DB_PASSWORD:holdhive}
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
+
+holdhive:
+  market:
+    external-enabled: ${HOLDHIVE_MARKET_EXTERNAL_ENABLED:true}
+    cache-ttl: ${HOLDHIVE_MARKET_CACHE_TTL:30d}
+    http-timeout: ${HOLDHIVE_MARKET_HTTP_TIMEOUT:3s}
+  llm:
+    api-key: ${DEEPSEEK_API_KEY:}

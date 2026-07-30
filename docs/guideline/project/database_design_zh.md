@@ -2,7 +2,7 @@
 
 ## 1. 设计目标
 
-本设计优先支持两天编码周期内的 MVP，同时保留向多组合、历史价格、交易流水和多币种扩展的路径。
+本设计优先支持两天编码周期内的多资产 MVP，同时保留向多组合、历史价格、交易流水和多币种扩展的路径。
 
 设计原则：
 
@@ -18,7 +18,7 @@
 ### MVP 必须实现
 
 - `portfolio`：组合基本信息。当前虽然只有一个组合，仍保留组合边界，避免持仓表以后整体重构。
-- `instrument`：证券的稳定身份，不把 ticker 文本重复存入每条持仓。
+- `instrument`：可估值资产的稳定身份，不把 ticker 文本重复存入每条持仓。
 - `holding`：某个组合当前持有某个证券的数量和平均成本。
 - `price_snapshot`：市场价格缓存和数据来源状态。
 
@@ -54,6 +54,8 @@ erDiagram
         varchar exchange_code
         varchar display_name
         varchar asset_type
+        varchar provider
+        varchar provider_quote_id
         char currency
         datetime created_at
         datetime updated_at
@@ -76,6 +78,7 @@ erDiagram
         decimal price
         char currency
         varchar provider
+        varchar status
         boolean is_demo
         datetime observed_at
         datetime created_at
@@ -100,16 +103,26 @@ MVP 启动时创建一个默认组合，例如 `My Portfolio`，但业务代码�
 
 | 字段 | 建议类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
-| `id` | `BIGINT` | PK，自动生成 | 证券 ID |
-| `ticker` | `VARCHAR(32)` | NOT NULL | 标准化为大写，例如 `AAPL` |
-| `exchange_code` | `VARCHAR(16)` | NOT NULL，默认 `UNKNOWN` | 交易所代码，用于避免 ticker 冲突 |
+| `id` | `BIGINT` | PK，自动生成 | 资产 ID |
+| `ticker` | `VARCHAR(32)` | NOT NULL | 标准化为大写，例如 `AAPL`、`VOO`、`BTC`、`USD` |
+| `exchange_code` | `VARCHAR(16)` | NOT NULL，默认 `UNKNOWN` | 交易所或分类代码；现金使用 `CASH` |
 | `display_name` | `VARCHAR(160)` | NULL | 展示名称 |
-| `asset_type` | `VARCHAR(24)` | NOT NULL，默认 `STOCK` | `STOCK`、`BOND`、`FUND`、`CASH` 等 |
+| `asset_type` | `VARCHAR(24)` | NOT NULL，默认 `STOCK` | MVP 允许 `STOCK`、`ETF`、`MUTUAL_FUND`、`CRYPTO`、`CASH`、`BANK_DEPOSIT` |
+| `provider` | `VARCHAR(32)` | NULL | 行情来源，例如 `EASTMONEY`、`DEMO`、`FIXED` |
+| `provider_quote_id` | `VARCHAR(64)` | NULL | 外部行情 ID，例如 `105.AAPL`；现金为 `NULL` |
 | `currency` | `CHAR(3)` | NOT NULL，默认 `USD` | 报价币种 |
 | `created_at` | `DATETIME(6)` | NOT NULL | UTC 创建时间 |
 | `updated_at` | `DATETIME(6)` | NOT NULL | UTC 最后更新时间 |
 
-唯一约束：`UNIQUE (ticker, exchange_code)`。
+唯一约束：`UNIQUE (asset_type, ticker, exchange_code)`。这样 `BTC` 作为加密资产不会与同名股票或其他资产类别冲突。
+
+资产类型规则：
+
+- `STOCK` 和 `ETF`：通常需要 `provider_quote_id`，可以来自 `/api/v1/market/search`；ETF 估值像股票，底层持仓只进入穿透分析。
+- `MUTUAL_FUND`：保存基金代码或自定义代码，MVP 可使用演示/缓存净值；持仓披露数据进入独立的 fund lookthrough 数据，不写回主持仓。
+- `CRYPTO`：MVP 可以使用 `provider = DEMO` 和演示价格；接入实时接口后再保存真实 provider quote id。
+- `CASH`：`ticker` 使用币种代码，例如 `USD`；`exchange_code = CASH`；`provider = FIXED`；不需要 `price_snapshot`。
+- `BANK_DEPOSIT`：`ticker` 使用可读代码，例如 `HSBC_USD`；`exchange_code = BANK`；`provider = FIXED`；MVP 按本金固定估值，不自动计提利息。
 
 ### 4.3 `holding`
 
@@ -137,13 +150,14 @@ MVP 启动时创建一个默认组合，例如 `My Portfolio`，但业务代码�
 | `price` | `DECIMAL(24,8)` | NOT NULL，`>= 0` | 市场价格 |
 | `currency` | `CHAR(3)` | NOT NULL | 报价币种 |
 | `provider` | `VARCHAR(64)` | NOT NULL | 数据提供方，例如 `SAMPLE_API` |
+| `status` | `VARCHAR(32)` | NOT NULL | 写入时的价格状态，例如 `LIVE`；兼容初始 migration |
 | `is_demo` | `BOOLEAN` | NOT NULL，默认 `FALSE` | 是否为演示价格 |
 | `observed_at` | `DATETIME(6)` | NOT NULL | 价格对应的 UTC 市场时间 |
 | `created_at` | `DATETIME(6)` | NOT NULL | UTC 系统写入时间 |
 
 唯一约束：`UNIQUE (instrument_id, provider, observed_at)`。
 
-MVP 查询只取每个证券最新的一条有效价格。市场服务失败时，可以读取未过期缓存；若使用演示数据，必须设置 `is_demo = true` 并通过 API 返回该状态。
+MVP 查询只取每个资产最新的一条有效价格。市场服务失败时，可以读取未过期缓存；若使用演示数据，必须设置 `is_demo = true` 并通过 API 返回该状态。现金不写入 `price_snapshot`，由后端按固定价格规则直接估值。
 
 ## 5. 参考 DDL
 
@@ -165,11 +179,15 @@ CREATE TABLE instrument (
     exchange_code VARCHAR(16) NOT NULL DEFAULT 'UNKNOWN',
     display_name VARCHAR(160),
     asset_type VARCHAR(24) NOT NULL DEFAULT 'STOCK',
+    provider VARCHAR(32),
+    provider_quote_id VARCHAR(64),
     currency CHAR(3) NOT NULL DEFAULT 'USD',
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6) NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uq_instrument_symbol UNIQUE (ticker, exchange_code)
+    CONSTRAINT ck_instrument_asset_type
+        CHECK (asset_type IN ('STOCK', 'ETF', 'MUTUAL_FUND', 'CRYPTO', 'CASH', 'BANK_DEPOSIT')),
+    CONSTRAINT uq_instrument_symbol UNIQUE (asset_type, ticker, exchange_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE holding (
@@ -197,6 +215,7 @@ CREATE TABLE price_snapshot (
     price DECIMAL(24,8) NOT NULL,
     currency CHAR(3) NOT NULL,
     provider VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL,
     is_demo BOOLEAN NOT NULL DEFAULT FALSE,
     observed_at DATETIME(6) NOT NULL,
     created_at DATETIME(6) NOT NULL,

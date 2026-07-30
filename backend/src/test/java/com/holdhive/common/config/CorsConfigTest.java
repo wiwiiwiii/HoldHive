@@ -1,0 +1,33 @@
+package com.holdhive.common.config;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.holdhive.common.api.HealthController;
+
+@WebMvcTest(HealthController.class)
+@Import(CorsConfig.class)
+@TestPropertySource(properties = "holdhive.cors.allowed-origins=http://localhost:5173")
+class CorsConfigTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void allowsConfiguredFrontendOriginForApiRequests() throws Exception {
+        mockMvc.perform(options("/api/v1/health")
+                .header("Origin", "http://localhost:5173")
+                .header("Access-Control-Request-Method", "GET"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+            .andExpect(header().string("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS"));
+    }
+}

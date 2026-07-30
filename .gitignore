@@ -63,3 +63,10 @@ frontend/vite.config.d.ts
 
 # Local generated artifacts
 *.local
+
+# Presentation generated verification artifacts
+docs/presentation/previews/
+docs/presentation/*.inspect.ndjson
+
+# Scratch demo project (superseded by backend/analysis migration)
+analysis-demo/
