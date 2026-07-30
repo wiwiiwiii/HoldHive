@@ -48,11 +48,12 @@ function getPriceStatusLabel(status: string): string {
 interface HoldingsPageProps {
     isDark?: boolean;
     refreshTrigger?: number;
+    onHoldingsChanged?: () => void;
 }
 
 const PRICE_MODE: PriceMode = 'DEMO_ALLOWED';
 
-export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
+export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: HoldingsPageProps) {
     const [activeFilter, setActiveFilter] = useState('All');
     const [holdings, setHoldings] = useState<HoldingRow[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -91,12 +92,16 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
         try {
             await deleteHolding(id);
             toast.success(`${ticker} removed. Allocation and totals updated.`);
-            await loadHoldings();
             setDeleteConfirmId(null);
+            if (onHoldingsChanged) {
+                onHoldingsChanged();
+            } else {
+                await loadHoldings();
+            }
         } catch {
             toast.error(`Failed to delete ${ticker}.`);
         }
-    }, [loadHoldings]);
+    }, [loadHoldings, onHoldingsChanged]);
 
     const openEdit = useCallback((row: HoldingRow) => {
         setEditTarget(row);
@@ -131,14 +136,18 @@ export function HoldingsPage({ isDark, refreshTrigger }: HoldingsPageProps) {
             }, PRICE_MODE);
             toast.success(`${editTarget.ticker} updated.`);
             closeEdit();
-            await loadHoldings();
+            if (onHoldingsChanged) {
+                onHoldingsChanged();
+            } else {
+                await loadHoldings();
+            }
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to update holding.';
             toast.error(message);
         } finally {
             setIsUpdating(false);
         }
-    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings]);
+    }, [editTarget, editQuantity, editPrice, closeEdit, loadHoldings, onHoldingsChanged]);
 
     const filteredHoldings = holdings.filter((row) => {
         if (activeFilter === 'All') return true;

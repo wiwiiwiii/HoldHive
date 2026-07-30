@@ -58,10 +58,14 @@ export function App() {
 
   const pageInfo = PAGE_INFO[activeNav] ?? PAGE_INFO.Dashboard;
 
-  const handleHoldingSaved = useCallback(() => {
-    setShowAddHolding(false);
+  const handleHoldingsChanged = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  const handleHoldingSaved = useCallback(() => {
+    setShowAddHolding(false);
+    handleHoldingsChanged();
+  }, [handleHoldingsChanged]);
 
   const handleNavClick = useCallback((label: string) => {
     setActiveNav(label);
@@ -99,9 +103,17 @@ export function App() {
       return <GatewayPage onNavigate={handleNavClick} onAddHolding={handleAddClick} isDark={isDark} />;
     }
     if (activeNav === 'Dashboard') return <DashboardPage />;
-    if (activeNav === 'Holdings') return <HoldingsPage isDark={isDark} refreshTrigger={refreshKey} />;
+    if (activeNav === 'Holdings') {
+      return (
+          <HoldingsPage
+              isDark={isDark}
+              refreshTrigger={refreshKey}
+              onHoldingsChanged={handleHoldingsChanged}
+          />
+      );
+    }
     if (activeNav === 'Performance') return <PerformancePage />;
-    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} />;
+    if (activeNav === 'Analysis') return <AnalysisPage isDark={isDark} refreshTrigger={refreshKey} />;
     if (activeNav === 'Settings') return <SettingsPage isDark={isDark} onThemeChange={setIsDark} />;
     return (
         <div className="placeholder-page">

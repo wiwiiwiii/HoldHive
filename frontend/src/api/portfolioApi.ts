@@ -163,12 +163,44 @@ export async function fetchHoldingsFull(priceMode: PriceMode = 'BEST_AVAILABLE')
   return envelope.items;
 }
 
+export interface AnalysisInsightStreamOptions {
+  onToken?: (text: string) => void;
+  onDone?: () => void;
+  onError?: (error: Error) => void;
+  signal?: AbortSignal;
+}
+
 export async function fetchAnalysisInsightsFull(
-    onToken?: (text: string) => void
+    options?: ((text: string) => void) | AnalysisInsightStreamOptions
 ): Promise<PortfolioAnalysisFacts> {
   return new Promise((resolve, reject) => {
     const es = new EventSource(`${API_BASE_URL}/portfolio/analysis/insights/full`);
     let facts: PortfolioAnalysisFacts | null = null;
+    let isClosed = false;
+    const streamOptions: AnalysisInsightStreamOptions =
+        typeof options === 'function' ? { onToken: options } : options ?? {};
+
+    const closeStream = () => {
+      if (isClosed) return;
+      isClosed = true;
+      es.close();
+      streamOptions.signal?.removeEventListener('abort', handleAbort);
+    };
+
+    const handleAbort = () => {
+      closeStream();
+      if (!facts) {
+        reject(new Error('Analysis stream cancelled'));
+      }
+    };
+
+    if (streamOptions.signal?.aborted) {
+      closeStream();
+      reject(new Error('Analysis stream cancelled'));
+      return;
+    }
+
+    streamOptions.signal?.addEventListener('abort', handleAbort);
 
     es.addEventListener('facts', (e) => {
       const { payload } = JSON.parse((e as MessageEvent).data);
@@ -178,17 +210,20 @@ export async function fetchAnalysisInsightsFull(
 
     es.addEventListener('token', (e) => {
       const { payload } = JSON.parse((e as MessageEvent).data);
-      onToken?.(payload);
+      streamOptions.onToken?.(payload);
     });
 
     es.addEventListener('done', () => {
-      es.close();
+      closeStream();
+      streamOptions.onDone?.();
     });
 
     es.onerror = () => {
-      es.close();
+      const error = new Error('Failed to connect to analysis endpoint');
+      closeStream();
+      streamOptions.onError?.(error);
       if (!facts) {
-        reject(new Error('Failed to connect to analysis endpoint'));
+        reject(error);
       }
     };
   });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import {
     PieChart,
     Pie,
@@ -141,27 +142,38 @@ function formatPercent(value: number): string {
 
 interface AnalysisPageProps {
     isDark?: boolean;
+    refreshTrigger?: number;
 }
 
-export function AnalysisPage({ isDark }: AnalysisPageProps) {
+export function AnalysisPage({ isDark, refreshTrigger = 0 }: AnalysisPageProps) {
     const [facts, setFacts] = useState<PortfolioAnalysisFacts | null>(null);
     const [exposure, setExposure] = useState<PortfolioExposure | null>(null);
     const [aiText, setAiText] = useState('');
     const [isAiStreaming, setIsAiStreaming] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [manualRefreshKey, setManualRefreshKey] = useState(0);
 
     useEffect(() => {
         let cancelled = false;
+        const controller = new AbortController();
         async function load() {
             setIsLoading(true);
             setAiText('');
             setIsAiStreaming(true);
             try {
                 const [analysisFacts, nextExposure] = await Promise.all([
-                    fetchAnalysisInsightsFull((token) => {
-                        if (!cancelled) {
-                            setAiText((prev) => prev + token);
-                        }
+                    fetchAnalysisInsightsFull({
+                        signal: controller.signal,
+                        onToken: (token) => {
+                            if (!cancelled) {
+                                setAiText((prev) => prev + token);
+                            }
+                        },
+                        onDone: () => {
+                            if (!cancelled) {
+                                setIsAiStreaming(false);
+                            }
+                        },
                     }),
                     fetchPortfolioExposure(true),
                 ]);
@@ -171,16 +183,21 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                 }
             } catch {
                 // keep empty on failure
+                if (!cancelled) {
+                    setIsAiStreaming(false);
+                }
             } finally {
                 if (!cancelled) {
                     setIsLoading(false);
-                    setIsAiStreaming(false);
                 }
             }
         }
         load();
-        return () => { cancelled = true; };
-    }, []);
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
+    }, [refreshTrigger, manualRefreshKey]);
 
     const overview = facts?.overview;
     const concentration = facts?.concentration;
@@ -292,6 +309,26 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
 
     return (
         <div className="analysis-page-wrapper">
+            <section className="analysis-page-section">
+                <div className="analysis-refresh-card">
+                    <div>
+                        <p className="analysis-refresh-title">Portfolio analysis</p>
+                        <p className="analysis-refresh-detail">
+                            Refreshes automatically after holdings change. Use manual refresh after market data changes.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        className="analysis-refresh-button"
+                        disabled={isLoading || isAiStreaming}
+                        onClick={() => setManualRefreshKey((key) => key + 1)}
+                    >
+                        <RefreshCw size={15} className={isLoading || isAiStreaming ? 'spin-icon' : undefined}/>
+                        {isLoading || isAiStreaming ? 'Updating' : 'Refresh analysis'}
+                    </button>
+                </div>
+            </section>
+
             {overlapWarnings.length > 0 && (
                 <section className="analysis-page-section">
                     <div className="analysis-card">
