@@ -91,16 +91,17 @@ export function HoldingsPage({ isDark, refreshTrigger, onHoldingsChanged }: Hold
 
     const handleDelete = useCallback(async (id: number, ticker: string) => {
         try {
-            await deleteHolding(id);
-            toast.success(`${ticker} removed. Allocation and totals updated.`);
+            const status = await deleteHolding(id);
+            toast.success(`Removed ${ticker} successfully (HTTP ${status}). Allocation and totals updated.`);
             setDeleteConfirmId(null);
             if (onHoldingsChanged) {
                 onHoldingsChanged();
             } else {
                 await loadHoldings();
             }
-        } catch {
-            toast.error(`Failed to delete ${ticker}.`);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : `Remove holding failed: ${ticker}`;
+            toast.error(message);
         }
     }, [loadHoldings, onHoldingsChanged]);
 

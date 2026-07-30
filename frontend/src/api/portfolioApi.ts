@@ -12,6 +12,73 @@ import type {
 export const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1';
 
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(action: string, status: number, detail: string) {
+    super(`${action} failed (HTTP ${status}): ${detail}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+function extractErrorDetail(payload: unknown): string | null {
+  if (typeof payload === 'string') {
+    return payload.trim() || null;
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  for (const key of ['message', 'detail', 'reason', 'error', 'title']) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  const errors = record.errors;
+  if (errors && typeof errors === 'object') {
+    const details = Object.entries(errors as Record<string, unknown>)
+        .flatMap(([field, value]) => {
+          if (Array.isArray(value)) {
+            return value.map((item) => `${field}: ${String(item)}`);
+          }
+          return [`${field}: ${String(value)}`];
+        })
+        .filter(Boolean);
+    if (details.length > 0) {
+      return details.join('; ');
+    }
+  }
+
+  return null;
+}
+
+async function throwApiError(response: Response, action: string): Promise<never> {
+  const fallbackDetail = response.statusText || 'Request failed';
+  let detail = fallbackDetail;
+
+  try {
+    const text = await response.text();
+    if (text.trim()) {
+      try {
+        detail = extractErrorDetail(JSON.parse(text)) ?? fallbackDetail;
+      } catch {
+        detail = text.replace(/\s+/g, ' ').trim().slice(0, 200) || fallbackDetail;
+      }
+    }
+  } catch {
+    detail = fallbackDetail;
+  }
+
+  throw new ApiError(action, response.status, detail);
+}
+
 export async function fetchPortfolioSummary(priceMode: PriceMode = 'BEST_AVAILABLE'): Promise<PortfolioSummaryResponse> {
   const response = await fetch(`${API_BASE_URL}/portfolio/summary?priceMode=${priceMode}`);
 
@@ -95,8 +162,7 @@ export async function createHolding(request: CreateHoldingRequest): Promise<Hold
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to create holding: ${errorText}`);
+    await throwApiError(response, 'Add holding');
   }
 
   return response.json();
@@ -119,21 +185,22 @@ export async function updateHolding(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to update holding: ${errorText}`);
+    await throwApiError(response, 'Update holding');
   }
 
   return response.json();
 }
 
-export async function deleteHolding(id: number): Promise<void> {
+export async function deleteHolding(id: number): Promise<number> {
   const response = await fetch(`${API_BASE_URL}/holdings/${id}`, {
     method: 'DELETE',
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to delete holding ${id}`);
+    await throwApiError(response, 'Remove holding');
   }
+
+  return response.status;
 }
 
 interface HoldingListEnvelope {
