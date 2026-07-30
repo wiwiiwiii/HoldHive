@@ -75,11 +75,16 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$.items[0].providerQuoteId").value("105.MSFT"))
             .andExpect(jsonPath("$.items[0].quantity").value(5.00000000))
             .andExpect(jsonPath("$.items[0].averagePurchasePrice").value(300.00000000))
+            .andExpect(jsonPath("$.items[0].purchasePrice").value(300.00000000))
+            .andExpect(jsonPath("$.items[0].buyPrice").value(300.00000000))
             .andExpect(jsonPath("$.items[0].currentPrice").value(330.00000000))
+            .andExpect(jsonPath("$.items[0].marketPrice").value(330.00000000))
             .andExpect(jsonPath("$.items[0].marketValue").value(1650.00000000))
             .andExpect(jsonPath("$.items[0].costBasis").value(1500.00000000))
             .andExpect(jsonPath("$.items[0].unrealizedGainLoss").value(150.00000000))
+            .andExpect(jsonPath("$.items[0].floatingProfitLoss").value(150.00000000))
             .andExpect(jsonPath("$.items[0].unrealizedGainLossPercent").value(10.00000000))
+            .andExpect(jsonPath("$.items[0].floatingProfitLossPercent").value(10.00000000))
             .andExpect(jsonPath("$.items[0].allocationPercent").value(100.00000000))
             .andExpect(jsonPath("$.items[0].priceStatus").value("CACHED"))
             .andExpect(jsonPath("$.items[0].priceObservedAt", notNullValue()));
@@ -88,7 +93,16 @@ class HoldingControllerTest {
                 .param("priceMode", "DEMO_ALLOWED"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(holdingId))
-            .andExpect(jsonPath("$.ticker").value("MSFT"));
+            .andExpect(jsonPath("$.ticker").value("MSFT"))
+            .andExpect(jsonPath("$.averagePurchasePrice").value(300.00000000))
+            .andExpect(jsonPath("$.purchasePrice").value(300.00000000))
+            .andExpect(jsonPath("$.buyPrice").value(300.00000000))
+            .andExpect(jsonPath("$.currentPrice").value(330.00000000))
+            .andExpect(jsonPath("$.marketPrice").value(330.00000000))
+            .andExpect(jsonPath("$.unrealizedGainLoss").value(150.00000000))
+            .andExpect(jsonPath("$.floatingProfitLoss").value(150.00000000))
+            .andExpect(jsonPath("$.unrealizedGainLossPercent").value(10.00000000))
+            .andExpect(jsonPath("$.floatingProfitLossPercent").value(10.00000000));
 
         mockMvc.perform(delete("/api/v1/holdings/{holdingId}", holdingId))
             .andExpect(status().isNoContent());
@@ -251,8 +265,12 @@ class HoldingControllerTest {
             .andExpect(jsonPath("$.id").value(holdingId))
             .andExpect(jsonPath("$.quantity").value(3.00000000))
             .andExpect(jsonPath("$.averagePurchasePrice").value(180.00000000))
+            .andExpect(jsonPath("$.buyPrice").value(180.00000000))
             .andExpect(jsonPath("$.currentPrice").value(210.25000000))
+            .andExpect(jsonPath("$.marketPrice").value(210.25000000))
             .andExpect(jsonPath("$.marketValue").value(630.75000000))
+            .andExpect(jsonPath("$.floatingProfitLoss").value(90.75000000))
+            .andExpect(jsonPath("$.floatingProfitLossPercent").value(16.80555556))
             .andExpect(jsonPath("$.priceStatus").value("CACHED"));
     }
 
