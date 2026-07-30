@@ -59,6 +59,63 @@ function hexagonPoints(cx: number, cy: number, r: number): string {
     return pts.join(' ');
 }
 
+function parseAiText(text: string): { title: string; content: string }[] {
+    const sections = text.split(/###\s+/).filter((s) => s.trim());
+    return sections.map((section) => {
+        const lines = section.split('\n');
+        const title = lines[0]?.trim() ?? '';
+        const content = lines.slice(1).join('\n').trim();
+        return { title, content };
+    });
+}
+
+function renderBoldText(text: string) {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i} style={{ color: 'var(--ink)', fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={i}>{part}</span>;
+    });
+}
+
+function renderSectionContent(content: string) {
+    const lines = content.split('\n').filter((l) => l.trim());
+    const hasBullets = lines.some((l) => l.trim().startsWith('- '));
+
+    if (hasBullets) {
+        return (
+            <ul style={{ margin: 0, paddingLeft: 0, listStyle: 'none' }}>
+                {lines.map((line, i) => {
+                    const text = line.replace(/^-\s*/, '');
+                    return (
+                        <li key={i} style={{
+                            fontSize: '0.92rem',
+                            color: 'var(--muted-darker)',
+                            lineHeight: 1.7,
+                            marginBottom: 8,
+                            display: 'flex',
+                            gap: 8,
+                        }}>
+                            <span style={{ color: 'var(--honey)', fontWeight: 700, flexShrink: 0 }}>•</span>
+                            <span>{renderBoldText(text)}</span>
+                        </li>
+                    );
+                })}
+            </ul>
+        );
+    }
+
+    return (
+        <p style={{
+            fontSize: '0.92rem',
+            color: 'var(--muted-darker)',
+            lineHeight: 1.7,
+            margin: 0,
+        }}>{renderBoldText(content)}</p>
+    );
+}
+
 function formatMoney(value: number): string {
     if (value >= 1000) {
         return `$${(value / 1000).toFixed(1)}k`;
@@ -239,8 +296,15 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                 <section className="analysis-page-section">
                     <div className="analysis-card">
                         {overlapWarnings.map((w, i) => (
-                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0 }}>
-                                <span className="fund-warning-icon">⚠</span>
+                            <div key={i} className="fund-warning-banner" style={{ marginBottom: i < overlapWarnings.length - 1 ? 12 : 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                <svg width="18" height="18" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: 1 }}>
+                                    <polygon
+                                        points="10,2 17.66,6.5 17.66,13.5 10,18 2.34,13.5 2.34,6.5"
+                                        fill="none"
+                                        stroke="#f6b33b"
+                                        strokeWidth="1.5"
+                                    />
+                                </svg>
                                 <span className="fund-warning-text">{w}</span>
                             </div>
                         ))}
@@ -475,13 +539,29 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                             AI Insights
                             {isAiStreaming && <span className="ai-streaming-indicator">Generating...</span>}
                         </h2>
-                        <p style={{
-                            fontSize: '0.92rem',
-                            color: 'var(--muted-darker)',
-                            lineHeight: 1.7,
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                        }}>{aiText}</p>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 20}}>
+                            {parseAiText(aiText).map((section, i) => (
+                                <div key={i} style={{
+                                    background: 'var(--honey-soft)',
+                                    borderRadius: 14,
+                                    padding: '16px 20px',
+                                    border: '1px solid #f5e6c8',
+                                }}>
+                                    <div style={{
+                                        display: 'inline-block',
+                                        background: 'var(--honey)',
+                                        color: '#fff',
+                                        fontSize: '0.78rem',
+                                        fontWeight: 700,
+                                        padding: '4px 14px',
+                                        borderRadius: 999,
+                                        marginBottom: 10,
+                                        letterSpacing: '0.02em',
+                                    }}>{section.title}</div>
+                                    {renderSectionContent(section.content)}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </section>
             )}
@@ -493,7 +573,7 @@ export function AnalysisPage({ isDark }: AnalysisPageProps) {
                         {reviewNotes.map((note) => (
                             <div className="review-note-item" key={note.title}>
                                 <svg width="40" height="40" viewBox="0 0 40 40" className="review-note-icon">
-                                    <polygon
+                                <polygon
                                         points={hexagonPoints(20, 20, 16)}
                                         fill="none"
                                         stroke={note.color}

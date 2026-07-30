@@ -405,9 +405,20 @@ export function DashboardPage() {
                         <h2 className="chart-title">Portfolio Exposure</h2>
                         <p className="chart-subtitle">Direct + fund lookthrough positions</p>
                         {exposureWarnings.length > 0 && (
-                            <div className="fund-warning-banner" style={{marginBottom: 16}}>
-                                <span className="fund-warning-icon"></span>
-                                <span className="fund-warning-text">{exposureWarnings.join(' ')}</span>
+                            <div style={{ marginBottom: 16 }}>
+                                {exposureWarnings.map((w, i) => (
+                                    <div key={i} className="fund-warning-banner" style={{ marginBottom: i < exposureWarnings.length - 1 ? 10 : 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                        <svg width="18" height="18" viewBox="0 0 20 20" style={{ flexShrink: 0, marginTop: 1 }}>
+                                            <polygon
+                                                points="10,2 17.66,6.5 17.66,13.5 10,18 2.34,13.5 2.34,6.5"
+                                                fill="none"
+                                                stroke="#f6b33b"
+                                                strokeWidth="1.5"
+                                            />
+                                        </svg>
+                                        <span className="fund-warning-text">{w}</span>
+                                    </div>
+                                ))}
                             </div>
                         )}
                         <table className="holdings-ledger-table">
