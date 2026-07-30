@@ -171,18 +171,17 @@ public class PortfolioAnalysisService {
             Output in Markdown format (no JSON, no code block markers). Use `###` headings \
             for each section, **bold** for key figures (HHI values, percentages, tickers), \
             and bullet lists for diversification suggestions. Structure as follows:\
-            ### Overall Summary — one paragraph overview of the portfolio composition;\
+            ### Portfolio Overview — one paragraph: total market value, asset class \
+            breakdown, overall P&L summary; note missing cost basis if applicable;\
             ### Concentration Risk — HHI, largest holding, top-N combined %, risk level;\
             ### Sector Exposure — sectorExposure.topSector and its percentage, sector \
             concentration/diversification; note low coverage if applicable;\
-            ### Fund-Stock Overlap — if no FUND-type holdings, omit this section entirely \
-            (no "not applicable" boilerplate);\
-            ### Look-Through Analysis — effective holding percentages after unpacking \
-            funds; likewise omit if no FUND holdings;\
-            ### Profit & Loss — note missing cost basis data if applicable;\
+            ### Fund Analysis — if no FUND-type holdings, omit this section entirely \
+            (no "not applicable" boilerplate); otherwise cover fund-stock overlap and \
+            effective holding percentages after unpacking funds in one cohesive section;\
             ### Diversification Advice — 1–3 specific, actionable suggestions as bullet \
             points.\
-            Keep the entire output under 1,500 characters.
+            Keep the entire output under 1,200 characters.
             """;
 
     private final OverviewCalculator overviewCalculator = new OverviewCalculator();
