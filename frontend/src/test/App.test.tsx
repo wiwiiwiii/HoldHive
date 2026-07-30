@@ -53,10 +53,10 @@ describe('App', () => {
     });
     expect(screen.getAllByTestId(/gateway-node-label-/)).toHaveLength(6);
     screen.getAllByTestId(/gateway-node-label-/).forEach((label) => {
-      expect(label).toHaveAttribute('data-font-size', '22');
+      expect(label).toHaveAttribute('data-font-size', '18');
     });
     screen.getAllByTestId(/gateway-node-sub-/).forEach((subLabel) => {
-      expect(subLabel).toHaveAttribute('data-font-size', '16');
+      expect(subLabel).toHaveAttribute('data-font-size', '14');
     });
   });
 
@@ -83,11 +83,14 @@ describe('App', () => {
     fireEvent.mouseDown(holdingsNode!);
 
     expect(holdingsPortal).toHaveAttribute('data-state', 'pressed');
-    expect(screen.getByTestId('gateway-node-glow-holdings')).toBeInTheDocument();
-    expect(screen.getAllByTestId(/gateway-node-glow-holdings-layer-/)).toHaveLength(3);
-    expect(screen.getByTestId('gateway-node-glow-holdings-layer-outer')).toHaveAttribute('fill', 'url(#gatewayPressedGlowOuter)');
-    expect(screen.getByTestId('gateway-node-glow-holdings-layer-middle')).toHaveAttribute('fill', 'url(#gatewayPressedGlowMiddle)');
-    expect(screen.getByTestId('gateway-node-glow-holdings-layer-inner')).toHaveAttribute('stroke', '#f6b33b');
+    const pressedGlow = screen.getByTestId('gateway-node-glow-holdings');
+    expect(pressedGlow).toBeInTheDocument();
+    expect(pressedGlow).toHaveAttribute('data-glow-style', 'diffused-gradient-halo');
+    expect(screen.getAllByTestId(/gateway-node-glow-holdings-layer-/)).toHaveLength(4);
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-aura')).toHaveAttribute('fill', 'url(#gatewayPressedHaloAura)');
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-bloom')).toHaveAttribute('fill', 'url(#gatewayPressedHaloBloom)');
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-edge')).toHaveAttribute('fill', 'url(#gatewayPressedHaloEdge)');
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-edge')).not.toHaveAttribute('stroke', '#f6b33b');
     expect(holdingsPortal).toHaveAttribute('fill', '#4F86F7');
     expect(holdingsPortal).toHaveAttribute('fill-opacity', '0.15');
 

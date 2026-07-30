@@ -464,6 +464,10 @@ code {
   border: 1px solid #eef0f5;
 }
 
+.holdings-card {
+  overflow-x: auto;
+}
+
 .section-title {
   font-size: 1.15rem;
   font-weight: 700;
@@ -474,24 +478,28 @@ code {
 .holdings-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .holdings-table th {
   text-align: left;
-  font-size: 0.78rem;
+  font-size: clamp(0.84rem, 0.8vw, 0.9rem);
   font-weight: 600;
   color: var(--muted);
-  padding: 10px 12px;
+  padding: 11px 10px;
   border-bottom: 1px solid #f0f1f5;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .holdings-table td {
-  padding: 14px 12px;
-  font-size: 0.88rem;
+  padding: 15px 10px;
+  font-size: clamp(0.94rem, 0.88vw, 1rem);
+  line-height: 1.35;
   color: var(--ink);
   border-bottom: 1px solid #f6f7fb;
+  overflow-wrap: anywhere;
 }
 
 .holdings-table tr:last-child td {
@@ -500,10 +508,48 @@ code {
 
 .symbol-cell {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .value-cell {
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.price-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.price-status-live {
+  background: #e8f8f0;
+  color: #27ae60;
+}
+
+.price-status-cached {
+  background: #eef0fb;
+  color: #4F86F7;
+}
+
+.price-status-demo {
+  background: #fff9ed;
+  color: #f6b33b;
+}
+
+.price-status-fixed {
+  background: #f0f1f5;
+  color: #64748b;
+}
+
+.price-status-unavailable {
+  background: #fde8e8;
+  color: #e74c3c;
 }
 
 .notes-list {
@@ -619,13 +665,13 @@ code {
 }
 
 .hive-node-label {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   fill: var(--ink);
 }
 
 .hive-node-sub {
-  font-size: 16px;
+  font-size: 14px;
   fill: var(--muted);
 }
 
@@ -754,6 +800,7 @@ code {
   border: 1px solid #eef0f5;
   max-width: 1000px;
   margin: 0 auto 24px;
+  overflow-x: auto;
 }
 
 .holdings-ledger-title {
@@ -766,24 +813,28 @@ code {
 .holdings-ledger-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .holdings-ledger-table th {
   text-align: left;
-  font-size: 0.78rem;
+  font-size: clamp(0.84rem, 0.78vw, 0.9rem);
   font-weight: 600;
   color: var(--muted);
-  padding: 12px 14px;
+  padding: 13px 10px;
   border-bottom: 1px solid #f0f1f5;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .holdings-ledger-table td {
-  padding: 16px 14px;
-  font-size: 0.88rem;
+  padding: 16px 10px;
+  font-size: clamp(0.94rem, 0.86vw, 1rem);
+  line-height: 1.35;
   color: var(--ink);
   border-bottom: 1px solid #f6f7fb;
+  overflow-wrap: anywhere;
 }
 
 .holdings-ledger-table tr:last-child td {
@@ -797,7 +848,9 @@ code {
 
 .ledger-action-cell {
   text-align: right;
-  padding: 16px 14px !important;
+  min-width: 72px;
+  padding: 16px 10px !important;
+  white-space: nowrap;
 }
 
 .ledger-delete-btn {
@@ -937,10 +990,12 @@ code {
 
 .ledger-symbol {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .ledger-value {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .ledger-pl-positive {
@@ -1117,6 +1172,7 @@ code {
   padding: 28px;
   box-shadow: 0 2px 12px rgba(23, 32, 51, 0.04);
   border: 1px solid #eef0f5;
+  overflow-x: auto;
 }
 
 .analysis-card-title {
@@ -1519,6 +1575,31 @@ code {
   color: var(--ink);
 }
 
+.dark .price-status-live {
+  background: #0f2419;
+  color: #27ae60;
+}
+
+.dark .price-status-cached {
+  background: #0f1629;
+  color: #4F86F7;
+}
+
+.dark .price-status-demo {
+  background: #1a1810;
+  color: #c9a84c;
+}
+
+.dark .price-status-fixed {
+  background: #1a1a24;
+  color: #8a94a6;
+}
+
+.dark .price-status-unavailable {
+  background: #2a1010;
+  color: #e74c3c;
+}
+
 .dark .holdings-conflict-card {
   background: #111111;
   border-color: var(--line);
@@ -1780,12 +1861,6 @@ code {
 .dark .delete-dialog-cancel:hover {
   border-color: #8896aa;
   background: #1a1a24;
-}
-
-.price-status-demo {
-  font-size: 0.72rem;
-  color: var(--honey);
-  font-weight: 500;
 }
 
 .holdings-empty-state {
