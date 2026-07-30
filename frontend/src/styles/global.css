@@ -54,10 +54,17 @@ code {
   background: var(--bg);
 }
 
+.app-container.sidebar-resizing,
+.app-container.sidebar-resizing * {
+  cursor: col-resize;
+  user-select: none;
+}
+
 /* ===== 3. Sidebar ===== */
 .sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
   background: var(--card);
   border-right: 1px solid var(--line);
   display: flex;
@@ -68,6 +75,48 @@ code {
   left: 0;
   bottom: 0;
   z-index: 10;
+  box-sizing: border-box;
+  transition: width 0.12s ease, min-width 0.12s ease, max-width 0.12s ease;
+}
+
+.sidebar-resizing .sidebar {
+  transition: none;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -5px;
+  bottom: 0;
+  width: 10px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 20;
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 4px;
+  width: 2px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle:focus-visible::after,
+.sidebar-resizing .sidebar-resize-handle::after {
+  background: var(--honey);
+  box-shadow: 0 0 0 3px rgba(246, 179, 59, 0.15);
+}
+
+.sidebar-resize-handle:focus-visible {
+  outline: none;
 }
 
 .sidebar-brand {
@@ -168,6 +217,9 @@ code {
   margin-left: var(--sidebar-width);
   padding: 32px 40px;
   max-width: 1200px;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: margin-left 0.12s ease;
 }
 
 /* ===== 5. Header ===== */

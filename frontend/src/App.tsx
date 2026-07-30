@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   Hexagon,
   LayoutDashboard,
@@ -39,11 +39,21 @@ const PAGE_INFO: Record<string, { title: string; subtitle: string }> = {
   Settings: { title: 'Settings', subtitle: 'Theme and preferences' },
 };
 
+const SIDEBAR_MIN_WIDTH = 180;
+const SIDEBAR_MAX_WIDTH = 320;
+const SIDEBAR_DEFAULT_WIDTH = 220;
+
+function clampSidebarWidth(width: number): number {
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, width));
+}
+
 export function App() {
   const [activeNav, setActiveNav] = useState('Gateway');
   const [isDark, setIsDark] = useState(false);
   const [showAddHolding, setShowAddHolding] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
+  const [isSidebarResizing, setIsSidebarResizing] = useState(false);
   const addHoldingRef = useRef<{ reset: () => void } | null>(null);
 
   const pageInfo = PAGE_INFO[activeNav] ?? PAGE_INFO.Dashboard;
@@ -66,6 +76,24 @@ export function App() {
     setShowAddHolding(false);
   }, []);
 
+  const handleSidebarResizeStart = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setIsSidebarResizing(true);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      setSidebarWidth(clampSidebarWidth(moveEvent.clientX));
+    };
+
+    const handlePointerUp = () => {
+      setIsSidebarResizing(false);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  }, []);
+
   const renderPage = () => {
     if (activeNav === 'Gateway') {
       return <GatewayPage onNavigate={handleNavClick} onAddHolding={handleAddClick} isDark={isDark} />;
@@ -86,7 +114,10 @@ export function App() {
   };
 
   return (
-      <div className={`app-container ${isDark ? 'dark' : ''}`}>
+      <div
+          className={`app-container ${isDark ? 'dark' : ''} ${isSidebarResizing ? 'sidebar-resizing' : ''}`}
+          style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
+      >
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="sidebar-brand">
@@ -115,6 +146,16 @@ export function App() {
               );
             })}
           </nav>
+
+          <button
+              type="button"
+              className="sidebar-resize-handle"
+              aria-label="Resize sidebar"
+              aria-valuemin={SIDEBAR_MIN_WIDTH}
+              aria-valuemax={SIDEBAR_MAX_WIDTH}
+              aria-valuenow={sidebarWidth}
+              onPointerDown={handleSidebarResizeStart}
+          />
 
         </aside>
 
