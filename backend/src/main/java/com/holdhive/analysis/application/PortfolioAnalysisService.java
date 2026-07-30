@@ -133,11 +133,11 @@ public class PortfolioAnalysisService {
             """;
 
     /**
-     * Streaming variant of {@link #SYSTEM_PROMPT}: asks for continuous English
-     * prose instead of a JSON object, so tokens can be forwarded to the client
-     * as they arrive (a partial JSON document is not safely renderable, partial
-     * prose is). Keeps the same citation/derivation/wording rules as the
-     * blocking prompt so the two remain factually consistent with each other.
+     * Streaming variant of {@link #SYSTEM_PROMPT}: asks for Markdown-formatted
+     * English prose instead of a JSON object, so tokens can be forwarded to the
+     * client as they arrive (a partial JSON document is not safely renderable,
+     * partial Markdown is). Keeps the same citation/derivation/wording rules as
+     * the blocking prompt so the two remain factually consistent with each other.
      */
     private static final String STREAM_SYSTEM_PROMPT = """
             You are HoldHive's portfolio analysis assistant. The facts fields in the user \
@@ -166,19 +166,23 @@ public class PortfolioAnalysisService {
             "somewhat high", "somewhat low", "relatively high", or "elevated" that could \
             contradict riskLevel. When citing an HHI value, include the threshold reference \
             (below 0.15 is low, 0.15–0.25 is moderate, above 0.25 is high).\
-            Your task is to generate a continuous passage of professional English commentary \
-            based on these facts, with a natural tone, like a human analyst's report.\
-            Output plain text only (no JSON, no markdown code block markers), flowing \
-            naturally as paragraphs in this order:\
-            1) Overall summary; 2) Concentration risk commentary (HHI/largest holding/top-N \
-            combined %); 3) Sector-level effective holding percentage commentary (must name \
-            sectorExposure.topSector and its percentage; note low coverage if applicable); \
-            4) Fund-stock overlap commentary (if the portfolio contains no FUND-type holdings, \
-            skip this section entirely — no "not applicable" boilerplate); 5) Effective \
-            holding percentage commentary after unpacking funds (likewise skip if no FUND \
-            holdings); 6) P&L commentary (note missing cost basis data if applicable); \
-            7) 1–3 specific, actionable diversification suggestions.\
-            Keep the entire output under 1,200 characters.
+            Your task is to generate a professional English commentary based on these \
+            facts, with a natural tone, like a human analyst's report.\
+            Output in Markdown format (no JSON, no code block markers). Use `###` headings \
+            for each section, **bold** for key figures (HHI values, percentages, tickers), \
+            and bullet lists for diversification suggestions. Structure as follows:\
+            ### Overall Summary — one paragraph overview of the portfolio composition;\
+            ### Concentration Risk — HHI, largest holding, top-N combined %, risk level;\
+            ### Sector Exposure — sectorExposure.topSector and its percentage, sector \
+            concentration/diversification; note low coverage if applicable;\
+            ### Fund-Stock Overlap — if no FUND-type holdings, omit this section entirely \
+            (no "not applicable" boilerplate);\
+            ### Look-Through Analysis — effective holding percentages after unpacking \
+            funds; likewise omit if no FUND holdings;\
+            ### Profit & Loss — note missing cost basis data if applicable;\
+            ### Diversification Advice — 1–3 specific, actionable suggestions as bullet \
+            points.\
+            Keep the entire output under 1,500 characters.
             """;
 
     private final OverviewCalculator overviewCalculator = new OverviewCalculator();
