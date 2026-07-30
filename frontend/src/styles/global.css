@@ -547,11 +547,15 @@ code {
   margin: 0 auto;
 }
 
+.gateway-card-fit {
+  padding: clamp(14px, 1.8vh, 24px) clamp(18px, 2.2vw, 28px);
+}
+
 .gateway-header-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: clamp(6px, 1vh, 12px);
 }
 
 .gateway-brand-area {
@@ -561,21 +565,21 @@ code {
 }
 
 .gateway-logo {
-  width: 100px;
+  width: clamp(70px, 8vw, 92px);
   height: auto;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .gateway-main-title {
-  font-size: 1.6rem;
+  font-size: clamp(1.2rem, 2.2vh, 1.45rem);
   font-weight: 700;
   color: var(--ink);
   margin: 0 0 4px;
 }
 
 .gateway-main-subtitle {
-  font-size: 0.92rem;
+  font-size: clamp(0.8rem, 1.35vh, 0.88rem);
   color: var(--muted);
   margin: 0;
 }
@@ -600,7 +604,7 @@ code {
 .hive-map-container {
   display: flex;
   justify-content: center;
-  padding: 20px 0;
+  padding: clamp(4px, 0.8vh, 10px) 0 0;
 }
 
 .hive-map-svg {
@@ -609,36 +613,19 @@ code {
   height: auto;
 }
 
-.hive-center-label {
-  font-size: 21px;
-  font-weight: 700;
-  fill: var(--ink);
-}
-
-.hive-center-sub {
-  font-size: 14px;
-  fill: var(--muted);
+.hive-map-svg-fit {
+  max-height: min(64vh, 650px);
+  object-fit: contain;
 }
 
 .hive-node-label {
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 600;
   fill: var(--ink);
 }
 
 .hive-node-sub {
-  font-size: 14px;
-  fill: var(--muted);
-}
-
-.tooltip-title {
-  font-size: 17px;
-  font-weight: 600;
-  fill: var(--ink);
-}
-
-.tooltip-sub {
-  font-size: 14px;
+  font-size: 16px;
   fill: var(--muted);
 }
 
@@ -1538,23 +1525,14 @@ code {
 }
 
 /* Dark SVG fills */
-.dark .hive-center-label,
 .dark .hive-node-label {
   fill: var(--ink);
 }
 
-.dark .hive-center-sub,
 .dark .hive-node-sub {
   fill: var(--muted);
 }
 
-.dark .tooltip-title {
-  fill: var(--ink);
-}
-
-.dark .tooltip-sub {
-  fill: var(--muted);
-}
 
 /* ===== 15. Add Holding Page ===== */
 .add-holding-page-wrapper {

@@ -45,5 +45,55 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByTestId('gateway-hive-map')).toHaveAttribute('viewBox', '0 0 1040 728');
+    expect(screen.queryByText(/single portfolio context/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^HoldHive$/i)).not.toBeInTheDocument();
+    expect(screen.getAllByTestId(/gateway-node-portal-/)).toHaveLength(6);
+    screen.getAllByTestId(/gateway-node-portal-/).forEach((nodePortal) => {
+      expect(nodePortal).toHaveAttribute('data-radius', '60');
+    });
+    expect(screen.getAllByTestId(/gateway-node-label-/)).toHaveLength(6);
+    screen.getAllByTestId(/gateway-node-label-/).forEach((label) => {
+      expect(label).toHaveAttribute('data-font-size', '22');
+    });
+    screen.getAllByTestId(/gateway-node-sub-/).forEach((subLabel) => {
+      expect(subLabel).toHaveAttribute('data-font-size', '16');
+    });
+  });
+
+  it('uses a viewport-fit gateway layout to avoid vertical scrolling', () => {
+    render(<App />);
+
+    expect(screen.getByTestId('gateway-card')).toHaveClass('gateway-card-fit');
+    expect(screen.getByTestId('gateway-hive-map')).toHaveClass('hive-map-svg-fit');
+  });
+
+  it('uses pressed glow without tooltip and clears pressed state on leave', () => {
+    render(<App />);
+
+    const holdingsPortal = screen.getByTestId('gateway-node-portal-holdings');
+    const holdingsNode = holdingsPortal.closest('.hive-node');
+
+    expect(holdingsNode).not.toBeNull();
+
+    fireEvent.mouseEnter(holdingsNode!);
+
+    expect(holdingsPortal).toHaveAttribute('data-state', 'hovered');
+    expect(screen.getAllByText(/positions/i)).toHaveLength(1);
+
+    fireEvent.mouseDown(holdingsNode!);
+
+    expect(holdingsPortal).toHaveAttribute('data-state', 'pressed');
+    expect(screen.getByTestId('gateway-node-glow-holdings')).toBeInTheDocument();
+    expect(screen.getAllByTestId(/gateway-node-glow-holdings-layer-/)).toHaveLength(3);
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-outer')).toHaveAttribute('fill', 'url(#gatewayPressedGlowOuter)');
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-middle')).toHaveAttribute('fill', 'url(#gatewayPressedGlowMiddle)');
+    expect(screen.getByTestId('gateway-node-glow-holdings-layer-inner')).toHaveAttribute('stroke', '#f6b33b');
+    expect(holdingsPortal).toHaveAttribute('fill', '#4F86F7');
+    expect(holdingsPortal).toHaveAttribute('fill-opacity', '0.15');
+
+    fireEvent.mouseLeave(holdingsNode!);
+
+    expect(holdingsPortal).toHaveAttribute('data-state', 'idle');
+    expect(screen.queryByTestId('gateway-node-glow-holdings')).not.toBeInTheDocument();
   });
 });

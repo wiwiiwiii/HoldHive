@@ -14,9 +14,9 @@ const GATEWAY_VIEWBOX_HEIGHT = 728;
 const GATEWAY_CENTER_X = 520;
 const GATEWAY_CENTER_Y = 364;
 const GATEWAY_OUTER_RADIUS = 260;
-const GATEWAY_NODE_RADIUS = 36;
+const GATEWAY_NODE_RADIUS = 60;
 const GATEWAY_CENTER_RADIUS = 91;
-const GATEWAY_TEXT_OFFSET = 55;
+const GATEWAY_TEXT_OFFSET = 102;
 
 function getHexPoint(cx: number, cy: number, radius: number, angleDeg: number) {
     const rad = (angleDeg * Math.PI) / 180;
@@ -56,7 +56,7 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
     const hexPath = hexagonPoints(cx, cy, outerRadius);
 
     return (
-        <div className="gateway-card">
+        <div className="gateway-card gateway-card-fit" data-testid="gateway-card">
             <div className="gateway-header-row">
                 <div className="gateway-brand-area">
                     <img src={isDark ? '/LogoBlack.png' : '/LogoWhite.png'} alt="HoldHive"
@@ -73,7 +73,7 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
             <div className="hive-map-container">
                 <svg
                     viewBox={`0 0 ${GATEWAY_VIEWBOX_WIDTH} ${GATEWAY_VIEWBOX_HEIGHT}`}
-                    className="hive-map-svg"
+                    className="hive-map-svg hive-map-svg-fit"
                     role="img"
                     aria-label="Hive gateway workspace map"
                     data-testid="gateway-hive-map"
@@ -96,30 +96,28 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                     <image
                         href={isDark ? '/LogoBlack.png' : '/LogoWhite.png'}
                         x={cx - 104}
-                        y={cy - 78}
+                        y={cy - 65}
                         width="208"
                         height="130"
                         preserveAspectRatio="xMidYMid meet"
                     />
-                    <text x={cx} y={cy + 68} textAnchor="middle" className="hive-center-label">
-                        HoldHive
-                    </text>
-                    <text x={cx} y={cy + 88} textAnchor="middle" className="hive-center-sub">
-                        single portfolio context
-                    </text>
-
                     {nodes.map((node) => {
                         const isHovered = hoveredNode === node.label;
                         const isPressed = pressedNode === node.label;
                         const fillOpacity = isHovered && !isPressed ? 1 : 0.15;
                         const scale = isHovered ? 1.15 : 1;
+                        const nodeKey = node.label.toLowerCase().replace(/\s+/g, '-');
+                        const nodeState = isPressed ? 'pressed' : isHovered ? 'hovered' : 'idle';
 
                         return (
                             <g
                                 key={node.label}
                                 className="hive-node"
                                 onMouseEnter={() => setHoveredNode(node.label)}
-                                onMouseLeave={() => setHoveredNode(null)}
+                                onMouseLeave={() => {
+                                    setHoveredNode(null);
+                                    setPressedNode(null);
+                                }}
                                 onMouseDown={() => setPressedNode(node.label)}
                                 onMouseUp={() => setPressedNode(null)}
                                 onClick={() => {
@@ -131,14 +129,45 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                                 }}
                                 style={{ cursor: 'pointer' }}
                             >
+                                {isPressed && (
+                                    <g data-testid={`gateway-node-glow-${nodeKey}`} filter="url(#gatewayPressedGlowBlur)">
+                                        <polygon
+                                            data-testid={`gateway-node-glow-${nodeKey}-layer-outer`}
+                                            data-glow-layer="outer"
+                                            points={hexagonPoints(node.x, node.y, nodeRadius + 48)}
+                                            fill="url(#gatewayPressedGlowOuter)"
+                                            opacity="0.72"
+                                        />
+                                        <polygon
+                                            data-testid={`gateway-node-glow-${nodeKey}-layer-middle`}
+                                            data-glow-layer="middle"
+                                            points={hexagonPoints(node.x, node.y, nodeRadius + 33)}
+                                            fill="url(#gatewayPressedGlowMiddle)"
+                                            opacity="0.64"
+                                        />
+                                        <polygon
+                                            data-testid={`gateway-node-glow-${nodeKey}-layer-inner`}
+                                            data-glow-layer="inner"
+                                            points={hexagonPoints(node.x, node.y, nodeRadius + 17)}
+                                            fill="none"
+                                            stroke="#f6b33b"
+                                            strokeWidth="4.5"
+                                            strokeOpacity="0.82"
+                                        />
+                                    </g>
+                                )}
                                 {isHovered && !isPressed && (
                                     <polygon
-                                        points={hexagonPoints(node.x, node.y, nodeRadius + 16)}
+                                        data-testid={`gateway-node-hover-${nodeKey}`}
+                                        points={hexagonPoints(node.x, node.y, nodeRadius + 20)}
                                         fill={node.color}
                                         opacity="0.15"
                                     />
                                 )}
                                 <polygon
+                                    data-testid={`gateway-node-portal-${nodeKey}`}
+                                    data-radius={nodeRadius}
+                                    data-state={nodeState}
                                     points={hexagonPoints(node.x, node.y, nodeRadius * scale)}
                                     fill={node.color}
                                     fillOpacity={fillOpacity}
@@ -149,12 +178,14 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                                 <circle
                                     cx={node.x}
                                     cy={node.y}
-                                    r={5}
+                                    r={8}
                                     fill={isHovered && !isPressed ? '#ffffff' : node.color}
                                     style={{ transition: 'all 0.16s ease' }}
                                 />
 
                                 <text
+                                    data-testid={`gateway-node-label-${nodeKey}`}
+                                    data-font-size="22"
                                     x={node.x + (node.x > cx ? GATEWAY_TEXT_OFFSET : -GATEWAY_TEXT_OFFSET)}
                                     y={node.y - 8}
                                     textAnchor={node.x > cx ? 'start' : 'end'}
@@ -163,6 +194,8 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                                     {node.label}
                                 </text>
                                 <text
+                                    data-testid={`gateway-node-sub-${nodeKey}`}
+                                    data-font-size="16"
                                     x={node.x + (node.x > cx ? GATEWAY_TEXT_OFFSET : -GATEWAY_TEXT_OFFSET)}
                                     y={node.y + 16}
                                     textAnchor={node.x > cx ? 'start' : 'end'}
@@ -170,35 +203,23 @@ export function GatewayPage({ onNavigate, onAddHolding, isDark }: GatewayPagePro
                                 >
                                     {node.sub}
                                 </text>
-
-                                {!isPressed && isHovered && (
-                                    <g>
-                                        <rect
-                                            x={node.x + 52}
-                                            y={node.y - 65}
-                                            width="234"
-                                            height="73"
-                                            rx="16"
-                                            fill="#ffffff"
-                                            stroke="#eef0f5"
-                                            strokeWidth="1"
-                                            filter="url(#shadow)"
-                                        />
-                                        <text x={node.x + 68} y={node.y - 33} className="tooltip-title">
-                                            {node.label}
-                                        </text>
-                                        <text x={node.x + 68} y={node.y - 12} className="tooltip-sub">
-                                            {node.sub}
-                                        </text>
-                                    </g>
-                                )}
                             </g>
                         );
                     })}
 
                     <defs>
-                        <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
-                            <feDropShadow dx="0" dy="4" stdDeviation="8" floodOpacity="0.08" />
+                        <radialGradient id="gatewayPressedGlowOuter" cx="50%" cy="50%" r="50%">
+                            <stop offset="30%" stopColor="#ffd66b" stopOpacity="0.28" />
+                            <stop offset="68%" stopColor="#f6b33b" stopOpacity="0.18" />
+                            <stop offset="100%" stopColor="#f6b33b" stopOpacity="0" />
+                        </radialGradient>
+                        <radialGradient id="gatewayPressedGlowMiddle" cx="50%" cy="50%" r="50%">
+                            <stop offset="40%" stopColor="#fff4d6" stopOpacity="0.22" />
+                            <stop offset="74%" stopColor="#f6b33b" stopOpacity="0.26" />
+                            <stop offset="100%" stopColor="#f6b33b" stopOpacity="0.02" />
+                        </radialGradient>
+                        <filter id="gatewayPressedGlowBlur" x="-40%" y="-40%" width="180%" height="180%">
+                            <feGaussianBlur stdDeviation="3.2" />
                         </filter>
                     </defs>
                 </svg>
