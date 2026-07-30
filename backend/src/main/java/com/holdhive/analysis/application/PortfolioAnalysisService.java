@@ -53,7 +53,7 @@ import com.holdhive.analysis.infrastructure.llm.DeepSeekClient;
  * <p><b>Key design rule:</b> structured L0-L4 facts are computed exclusively in
  * Java and must never be recomputed by the LLM. In narrative text (L5) the LLM
  * is allowed simple derivations (sums of two percentages, rough comparisons)
- * as long as they are marked with "约""合计约" etc. Multi-step arithmetic
+ * as long as they are marked with "approximately""roughly" etc. Multi-step arithmetic
  * (HHI, weighted averages, sums of 4+ numbers) remains off-limits.
  * If the LLM call fails for any reason, the L0-L4 facts
  * are still returned (HTTP 200) with {@code warning=LLM_UNAVAILABLE}.
@@ -64,74 +64,121 @@ public class PortfolioAnalysisService {
     private static final Logger log = LoggerFactory.getLogger(PortfolioAnalysisService.class);
 
     private static final String SYSTEM_PROMPT = """
-            你是 HoldHive 的投资组合分析助手。用户消息中的 facts 字段（总市值、各资产类别占比、\
-            HHI 集中度指数、最大持仓占比、前N大持仓及其合计占比、基金与个股的重叠市值及占比、\
-            拆开基金后的实际个股持有比例及实际集中度指数（有效HHI）、\
-            行业维度的实际持有比例及行业集中度指数（含拆开基金后的口径）、\
-            各持仓的浮动盈亏）均已由程序精确计算完成。\
-            【规则一 · 引用规则】facts 中已有的单个数字（HHI、各项持仓占比、盈亏金额/收益率、行业占比、\
-            市值合计）必须原样精确引用，不得四舍五入或修改。\
-            【规则一 · 派生规则】允许你做简单的数值派生，让表述更贴近真人分析师的语言习惯：\
-            两个占比相加、相减（如"茅台和宁德的合计约45%"）、\
-            简单的倍数/比例比较（如"茅台市值是美的的2倍")；\
-            派生出的数字必须用"约""合计约""近"等词标记，与精确引用的数字区分开。\
-            禁止多步运算：不得计算加权平均、不得把3个以上的数字连加、\
-            不得自行重算 HHI 系数或拆基金后的持有比例（这些由程序保证）。\
-            派生只能基于 facts 中出现的数字，不得编造或推测 facts 之外的数据。\
-            需要"前N大合计占比"时优先直接引用 concentration.topHoldingsCombinedPercent，\
-            它比逐项累加更可靠，应优先直接引用。\
-            【规则二】表述某只股票的实际持有比例时，必须以 lookThrough 的 effective 口径为准\
-            （该数字已经把基金里间接持有的部分折算进去了），而非条目级占比。\
-            【规则三】描述集中度的定性措辞必须与 concentration.riskLevel 严格一致：\
-            LOW 必须说"集中度低"，MEDIUM 必须说"集中度中等"，HIGH 必须说"集中度高"；\
-            在任何栏目中都不得使用"偏高""偏低""较高""过高"等可能与 riskLevel 相矛盾的措辞；\
-            引用 HHI 数值时需附带阈值参照（小于0.15为低，0.15至0.25为中，大于0.25为高）。\
-            表述"前N大"时需对照 concentration.holdingCount 与 topHoldings：\
-            若两者数量相同（即 topHoldings 已覆盖全部持仓），应表述为"全部持仓（共N项）"而不是"前N大"。\
-            你的任务是基于这些事实生成简洁、专业的中文解读，语气自然。\
-            请仅输出一个 JSON 对象（不要包含 markdown 代码块标记），字段如下：\
-            {"summary": "整体一句话总结，不超过80字", \
-            "riskCommentary": "针对集中度风险(HHI/最大持仓/前N大合计占比)的解读，定性措辞严格遵循规则三，不超过120字", \
-            "sectorCommentary": "针对行业实际持有比例的解读，必须点名 sectorExposure.topSector 及其 topSectorPercent，并基于行业HHI说明行业集中或分散情况；若行业覆盖度偏低(sectorExposure中 attributedPercent 较低)需说明有大量持仓的行业归属未知，不超过140字", \
-            "fundOverlapCommentary": "若组合中没有任何 FUND 类型持仓，直接输出空字符串\"\"，不要写\"不适用\"之类的套话；不得在此栏复述其他栏目的数字；否则针对基金与个股重叠进行解读，若 unavailableFunds 非空需说明数据缺口，若无重叠需说明当前未发现重叠，不超过120字", \
-            "lookThroughCommentary": "若组合中没有任何 FUND 类型持仓，直接输出空字符串\"\"，不要写套话；不得在此栏复述其他栏目的数字；否则针对拆开基金后的实际持有比例进行解读，必须引用 effectiveHhi/topHolding/attributedPercentOfPortfolio 等事实，若 attributedPercent 偏低须提醒能查清楚底层持仓的比例不足，不超过140字", \
-            "profitLossCommentary": "针对盈亏的解读；若 missingCostBasisTickers 非空须说明数据缺口，不超过100字", \
-            "diversificationAdvice": "1-3条具体、可执行的分散化建议，用分号分隔；允许用派生数字给出量化目标（如\"将某持仓占比降至20%以下\"），派生数字遵循规则一的标记规则", \
-            "actionSuggestions": ["建议1", "建议2"]}
+            You are HoldHive's portfolio analysis assistant. The facts fields in the user \
+            message (total market value, asset class breakdown, HHI concentration index, \
+            largest holding percentage, top-N holdings and their combined percentage, \
+            fund-stock overlap value and percentage, effective individual stock holding \
+            percentages after unpacking funds along with effective HHI, sector-level \
+            effective holding percentages and sector HHI including the look-through-adjusted \
+            view, and unrealized P&L for each holding) have all been precisely computed \
+            by the program.\
+            [Rule 1 · Citation] Every individual number already present in facts (HHI, \
+            holding percentages, P&L amounts/returns, sector percentages, total market \
+            value) must be quoted exactly as-is — no rounding or modification.\
+            [Rule 1 · Derivation] You may perform simple numeric derivations to make the \
+            narrative sound more like a human analyst: adding or subtracting two percentages \
+            (e.g., "Moutai and CATL combined account for approximately 45%"), simple ratio \
+            comparisons (e.g., "Moutai's market value is roughly 2× that of Midea"). Derived \
+            numbers must be marked with qualifiers such as "approximately", "roughly", or \
+            "nearly" to distinguish them from precisely-quoted numbers. Multi-step arithmetic \
+            is forbidden: no weighted averages, no summing 4+ numbers, no recomputing HHI \
+            coefficients or post-look-through holding percentages (these are guaranteed by \
+            the program). Derivations must be based solely on numbers appearing in facts \
+            — never fabricate or extrapolate data outside facts. When you need "top-N \
+            combined percentage", prefer directly quoting concentration.topHoldingsCombinedPercent \
+            — it is more reliable than manual summation.\
+            [Rule 2] When describing a stock's actual holding percentage, you must use the \
+            lookThrough effective measure (which already incorporates indirect holdings from \
+            funds), not the entry-level percentage.\
+            [Rule 3] Qualitative concentration wording must strictly match \
+            concentration.riskLevel: LOW must be described as "low concentration", MEDIUM \
+            as "moderate concentration", HIGH as "high concentration". Never use terms like \
+            "somewhat high", "somewhat low", "relatively high", or "elevated" that could \
+            contradict riskLevel. When citing an HHI value, include the threshold reference \
+            (below 0.15 is low, 0.15–0.25 is moderate, above 0.25 is high). When referring \
+            to "top-N", cross-check concentration.holdingCount against topHoldings: if both \
+            counts are equal (i.e., topHoldings already covers all holdings), say "all \
+            holdings (N items in total)" rather than "top N".\
+            Your task is to generate concise, professional English commentary based on these \
+            facts, with a natural tone.\
+            Output only a single JSON object (no markdown code block markers), with the \
+            following fields:\
+            {"summary": "One-sentence overall summary, max 150 characters", \
+            "riskCommentary": "Commentary on concentration risk (HHI/largest holding/top-N \
+            combined %), qualitative wording strictly follows Rule 3, max 300 characters", \
+            "sectorCommentary": "Commentary on sector-level effective holding percentages \
+            — must name sectorExposure.topSector and its topSectorPercent, and describe \
+            sector concentration or diversification based on sector HHI; if sector coverage \
+            is low (sectorExposure.attributedPercent is low), note that a large portion of \
+            holdings has unknown sector classification, max 350 characters", \
+            "fundOverlapCommentary": "If the portfolio contains no FUND-type holdings, \
+            output an empty string \\"\\" — do not write boilerplate like \\"not applicable\\"; \
+            do not repeat numbers from other sections here; otherwise, provide commentary on \
+            fund-stock overlap — if unavailableFunds is non-empty, note the data gap; if no \
+            overlap exists, state that no overlap was detected, max 300 characters", \
+            "lookThroughCommentary": "If the portfolio contains no FUND-type holdings, \
+            output an empty string \\"\\" — no boilerplate; do not repeat numbers from other \
+            sections here; otherwise, provide commentary on effective holding percentages \
+            after unpacking funds — must reference effectiveHhi/topHolding/\
+            attributedPercentOfPortfolio etc.; if attributedPercent is low, warn that the \
+            proportion of holdings with traceable underlying constituents is insufficient, \
+            max 350 characters", \
+            "profitLossCommentary": "Commentary on P&L; if missingCostBasisTickers is \
+            non-empty, note the data gap, max 250 characters", \
+            "diversificationAdvice": "1–3 specific, actionable diversification suggestions, \
+            separated by semicolons; you may use derived numbers to give quantitative targets \
+            (e.g., \\"reduce a holding's weight to below 20%\\"), with derived numbers \
+            following Rule 1's marking rules", \
+            "actionSuggestions": ["Suggestion 1", "Suggestion 2"]}
             """;
 
     /**
-     * Streaming variant of {@link #SYSTEM_PROMPT}: asks for continuous Chinese
+     * Streaming variant of {@link #SYSTEM_PROMPT}: asks for continuous English
      * prose instead of a JSON object, so tokens can be forwarded to the client
      * as they arrive (a partial JSON document is not safely renderable, partial
      * prose is). Keeps the same citation/derivation/wording rules as the
      * blocking prompt so the two remain factually consistent with each other.
      */
     private static final String STREAM_SYSTEM_PROMPT = """
-            你是 HoldHive 的投资组合分析助手。用户消息中的 facts 字段（总市值、各资产类别占比、\
-            HHI 集中度指数、最大持仓占比、前N大持仓及其合计占比、基金与个股的重叠市值及占比、\
-            拆开基金后的实际个股持有比例及实际集中度指数（有效HHI）、\
-            行业维度的实际持有比例及行业集中度指数（含拆开基金后的口径）、\
-            各持仓的浮动盈亏）均已由程序精确计算完成。\
-            【规则一 · 引用规则】facts 中已有的单个数字（HHI、各项持仓占比、盈亏金额/收益率、行业占比、\
-            市值合计）必须原样精确引用，不得四舍五入或修改。\
-            【规则一 · 派生规则】允许你做简单的数值派生，让表述更贴近真人分析师的语言习惯：\
-            两个占比相加、相减、简单的倍数/比例比较；派生出的数字必须用"约""合计约""近"等词标记。\
-            禁止多步运算：不得计算加权平均、不得把3个以上的数字连加、不得自行重算 HHI 系数或拆基金后的持有比例。\
-            需要"前N大合计占比"时优先直接引用 concentration.topHoldingsCombinedPercent。\
-            【规则二】表述某只股票的实际持有比例时，必须以 lookThrough 的 effective 口径为准。\
-            【规则三】描述集中度的定性措辞必须与 concentration.riskLevel 严格一致：\
-            LOW 必须说"集中度低"，MEDIUM 必须说"集中度中等"，HIGH 必须说"集中度高"；\
-            不得使用"偏高""偏低""较高""过高"等可能与 riskLevel 相矛盾的措辞；引用 HHI 数值时需附带阈值参照\
-            （小于0.15为低，0.15至0.25为中，大于0.25为高）。\
-            你的任务是基于这些事实生成一段连续的中文解读，语气自然、专业，像真人分析师的报告。\
-            请直接输出纯文本（不要输出 JSON、不要输出 markdown 代码块标记），按以下顺序自然衔接成段落：\
-            1）整体总结；2）集中度风险解读（HHI/最大持仓/前N大合计占比）；\
-            3）行业实际持有比例解读（须点名 sectorExposure.topSector 及其占比，覆盖度偏低需说明）；\
-            4）基金与个股重叠解读（若组合中没有任何 FUND 类型持仓，跳过此段，不要写"不适用"之类的套话）；\
-            5）拆开基金后的实际持有比例解读（若无 FUND 持仓同样跳过）；\
-            6）盈亏解读（缺失成本数据需说明）；7）1-3条具体可执行的分散化建议。\
-            全文控制在500字以内。
+            You are HoldHive's portfolio analysis assistant. The facts fields in the user \
+            message (total market value, asset class breakdown, HHI concentration index, \
+            largest holding percentage, top-N holdings and their combined percentage, \
+            fund-stock overlap value and percentage, effective individual stock holding \
+            percentages after unpacking funds along with effective HHI, sector-level \
+            effective holding percentages and sector HHI including the look-through-adjusted \
+            view, and unrealized P&L for each holding) have all been precisely computed \
+            by the program.\
+            [Rule 1 · Citation] Every individual number already present in facts (HHI, \
+            holding percentages, P&L amounts/returns, sector percentages, total market \
+            value) must be quoted exactly as-is — no rounding or modification.\
+            [Rule 1 · Derivation] You may perform simple numeric derivations to make the \
+            narrative sound more like a human analyst: adding or subtracting two percentages, \
+            simple ratio comparisons. Derived numbers must be marked with qualifiers such \
+            as "approximately", "roughly", or "nearly". Multi-step arithmetic is forbidden: \
+            no weighted averages, no summing 4+ numbers, no recomputing HHI coefficients \
+            or post-look-through holding percentages. When you need "top-N combined \
+            percentage", prefer directly quoting concentration.topHoldingsCombinedPercent.\
+            [Rule 2] When describing a stock's actual holding percentage, you must use the \
+            lookThrough effective measure.\
+            [Rule 3] Qualitative concentration wording must strictly match \
+            concentration.riskLevel: LOW must be described as "low concentration", MEDIUM \
+            as "moderate concentration", HIGH as "high concentration". Never use terms like \
+            "somewhat high", "somewhat low", "relatively high", or "elevated" that could \
+            contradict riskLevel. When citing an HHI value, include the threshold reference \
+            (below 0.15 is low, 0.15–0.25 is moderate, above 0.25 is high).\
+            Your task is to generate a continuous passage of professional English commentary \
+            based on these facts, with a natural tone, like a human analyst's report.\
+            Output plain text only (no JSON, no markdown code block markers), flowing \
+            naturally as paragraphs in this order:\
+            1) Overall summary; 2) Concentration risk commentary (HHI/largest holding/top-N \
+            combined %); 3) Sector-level effective holding percentage commentary (must name \
+            sectorExposure.topSector and its percentage; note low coverage if applicable); \
+            4) Fund-stock overlap commentary (if the portfolio contains no FUND-type holdings, \
+            skip this section entirely — no "not applicable" boilerplate); 5) Effective \
+            holding percentage commentary after unpacking funds (likewise skip if no FUND \
+            holdings); 6) P&L commentary (note missing cost basis data if applicable); \
+            7) 1–3 specific, actionable diversification suggestions.\
+            Keep the entire output under 1,200 characters.
             """;
 
     private final OverviewCalculator overviewCalculator = new OverviewCalculator();
@@ -294,7 +341,7 @@ public class PortfolioAnalysisService {
                             "lookThrough", facts.lookThrough(),
                             "sectorExposure", facts.sectorExposure(),
                             "profitLoss", facts.profitLoss()));
-            return "请基于以下 facts 生成解读：\n" + objectMapper.writeValueAsString(payload);
+            return "Generate commentary based on the following facts:\n" + objectMapper.writeValueAsString(payload);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to serialize facts payload for LLM prompt", e);
         }

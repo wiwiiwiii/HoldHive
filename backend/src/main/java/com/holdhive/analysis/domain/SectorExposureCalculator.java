@@ -32,11 +32,11 @@ import com.holdhive.analysis.domain.support.PercentMath;
  */
 public final class SectorExposureCalculator {
 
-    public static final String BUCKET_CASH = "现金及等价物";
-    public static final String BUCKET_UNKNOWN_SECTOR = "未知行业";
-    public static final String BUCKET_FUND_REMAINDER = "基金未穿透部分";
-    public static final String BUCKET_CRYPTO = "加密货币";
-    public static final String BUCKET_TERM_DEPOSIT = "定期存款";
+    public static final String BUCKET_CASH = "Cash & Equivalents";
+    public static final String BUCKET_UNKNOWN_SECTOR = "Unknown Sector";
+    public static final String BUCKET_FUND_REMAINDER = "Fund Unpenetrated";
+    public static final String BUCKET_CRYPTO = "Cryptocurrency";
+    public static final String BUCKET_TERM_DEPOSIT = "Term Deposit";
 
     public SectorExposureResult calculate(List<HoldingFact> holdings,
                                           SectorLookup sectorLookup,
