@@ -1,26 +1,26 @@
 [
   {
     "fundTicker": "000001",
-    "fundName": "华夏成长混合（demo mock 数据）",
+    "fundName": "华夏成长混合 (demo mock data)",
     "asOfQuarter": "2024Q1",
     "constituents": [
-      { "ticker": "600519", "name": "贵州茅台", "weightPercent": 3.20, "sector": "食品饮料" },
-      { "ticker": "601318", "name": "中国平安", "weightPercent": 2.80, "sector": "金融保险" },
-      { "ticker": "000858", "name": "五粮液", "weightPercent": 2.10, "sector": "食品饮料" },
-      { "ticker": "300750", "name": "宁德时代", "weightPercent": 4.50, "sector": "电力设备" },
-      { "ticker": "002475", "name": "立讯精密", "weightPercent": 2.30, "sector": "电子" }
+      { "ticker": "600519", "name": "贵州茅台", "weightPercent": 3.20, "sector": "Food & Beverage" },
+      { "ticker": "601318", "name": "中国平安", "weightPercent": 2.80, "sector": "Financials & Insurance" },
+      { "ticker": "000858", "name": "五粮液", "weightPercent": 2.10, "sector": "Food & Beverage" },
+      { "ticker": "300750", "name": "宁德时代", "weightPercent": 4.50, "sector": "Electrical Equipment" },
+      { "ticker": "002475", "name": "立讯精密", "weightPercent": 2.30, "sector": "Electronics" }
     ]
   },
   {
     "fundTicker": "005827",
-    "fundName": "易方达蓝筹精选混合（demo mock 数据）",
+    "fundName": "易方达蓝筹精选混合 (demo mock data)",
     "asOfQuarter": "2024Q1",
     "constituents": [
-      { "ticker": "600519", "name": "贵州茅台", "weightPercent": 8.50, "sector": "食品饮料" },
-      { "ticker": "000858", "name": "五粮液", "weightPercent": 5.20, "sector": "食品饮料" },
-      { "ticker": "600036", "name": "招商银行", "weightPercent": 4.10, "sector": "银行" },
-      { "ticker": "000333", "name": "美的集团", "weightPercent": 3.60, "sector": "家用电器" },
-      { "ticker": "601888", "name": "中国中免", "weightPercent": 2.90, "sector": "商贸零售" }
+      { "ticker": "600519", "name": "贵州茅台", "weightPercent": 8.50, "sector": "Food & Beverage" },
+      { "ticker": "000858", "name": "五粮液", "weightPercent": 5.20, "sector": "Food & Beverage" },
+      { "ticker": "600036", "name": "招商银行", "weightPercent": 4.10, "sector": "Banking" },
+      { "ticker": "000333", "name": "美的集团", "weightPercent": 3.60, "sector": "Home Appliances" },
+      { "ticker": "601888", "name": "中国中免", "weightPercent": 2.90, "sector": "Retail" }
     ]
   }
 ]
