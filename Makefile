@@ -14,7 +14,7 @@ frontend: ## Start the React/Vite frontend dev server.
 	cd $(FRONTEND_DIR) && npm run dev
 
 backend: ## Start the Spring Boot backend API server.
-	cd $(BACKEND_DIR) && ./mvnw spring-boot:run
+	cd $(BACKEND_DIR) && set -a; [ ! -f ../.env ] || . ../.env; set +a; ./mvnw spring-boot:run
 
 docs: ## Serve the docs directory (default: http://localhost:8000).
 	python3 -m http.server $(DOCS_PORT) --directory $(DOCS_DIR)
