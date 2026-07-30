@@ -557,9 +557,7 @@ POST /api/v1/portfolio/analysis
 | `llmInsights` | AI 基于以上数字生成的解读文本（JSON），仅解读不重新计算 |
 | `warning` | AI 生成失败时的原因（如 `LLM_UNAVAILABLE`）；此时 `llmInsights` 为 `null`，但其余字段仍正常返回 |
 
-这是新增接口，不影响 3.1/3.2 已有的 `Holding`/`PortfolioSummary` 数据模型。
-
-> TODO：以上响应字段拆分较细（6 个独立结果对象），后续计划根据前端实际使用情况做简化/合并。
+这是兼容手工测试和外部调用的阻塞接口：调用方自行传入 holdings，后端返回规则型事实和 LLM JSON 解读。应用内 Analysis 页面优先使用 4.15 的当前组合合并 SSE 端点，避免前端把市值等权威数据传回后端。
 
 ### 4.13 当前组合分析 — 结构化事实
 
@@ -568,6 +566,12 @@ GET /api/v1/portfolio/analysis/insights
 ```
 
 从服务端当前默认组合读取持仓（不接受客户端传入的市值），计算 L0-L4 结构化事实。**不调用 LLM**，响应快。
+
+查询参数：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `priceMode` | `BEST_AVAILABLE` | 与 holdings/summary 相同，控制估值口径 |
 
 成功响应：`200 OK`，返回 `PortfolioAnalysisFacts` JSON 对象：
 
@@ -587,7 +591,13 @@ GET /api/v1/portfolio/analysis/insights/stream
 Accept: text/event-stream
 ```
 
-从服务端当前默认组合读取持仓，计算 L0-L4 事实后调用 LLM 生成流式中文解读。每个 SSE `data:` 事件携带一小段文本。
+从服务端当前默认组合读取持仓，计算 L0-L4 事实后调用 LLM 生成流式英文解读。每个 SSE `data:` 事件携带一小段文本。
+
+查询参数：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `priceMode` | `BEST_AVAILABLE` | 与 holdings/summary 相同，控制估值口径 |
 
 - LLM 未配置或调用失败时，降级为单条说明文本后正常结束，不返回 HTTP 错误。
 - 前端可用 `EventSource` 消费。
@@ -606,13 +616,13 @@ SSE 事件序列：
 | 顺序 | 事件名 | 数据格式 | 说明 |
 | --- | --- | --- | --- |
 | 1 | `facts` | `{"type":"facts","payload":{...}}` | L0-L4 结构化事实（毫秒级到达） |
-| 2+ | `token` | `{"type":"token","payload":"文本片段"}` | LLM 流式输出的中文文本 |
+| 2+ | `token` | `{"type":"token","payload":"文本片段"}` | LLM 流式输出的英文 Markdown 文本 |
 | 最后 | `done` | `{"type":"done"}` | 流正常结束 |
 
 前端消费示例：
 
 ```typescript
-const es = new EventSource('/api/v1/portfolio/analysis/insights/full');
+const es = new EventSource('/api/v1/portfolio/analysis/insights/full?priceMode=BEST_AVAILABLE');
 
 es.addEventListener('facts', (e) => {
   const { payload } = JSON.parse(e.data);
@@ -669,7 +679,6 @@ allocationPercent = marketValue ÷ totalPricedMarketValue × 100
 | `POST /api/v1/portfolios/{id}/transactions` | 记录买入、卖出、股息等交易 |
 | `GET /api/v1/portfolios/{id}/performance` | 查询历史估值与表现 |
 | `GET /api/v1/portfolios/{id}/insights` | 获取规则型集中度或再平衡提示 |
-| `POST /api/v1/portfolio/ai-analysis` | 最后阶段调用大模型生成组合解读，不作为买卖建议 |
 
 API 演进使用 `/api/v1` 保持兼容。新增可选字段属于兼容变更；删除字段、改变字段含义或收紧已有输入规则需要新版本或迁移期。
 
@@ -687,56 +696,30 @@ API 演进使用 `/api/v1` 保持兼容。新增可选字段属于兼容变更�
 
 ### 7.2 大模型组合分析接口
 
-大模型分析放在最后阶段。它只读取后端整理后的结构化组合快照、基金穿透摘要和风险提示，不直接读取数据库表、不调用第三方行情、不保存用户密钥。输出必须带免责声明：结果用于解释当前组合结构，不构成投资建议。
+`1.0.0` 已实现当前组合 LLM 解读，推荐路径为：
 
 ```http
-POST /api/v1/portfolio/ai-analysis
-Content-Type: application/json
+GET /api/v1/portfolio/analysis/insights/full?priceMode=BEST_AVAILABLE
+Accept: text/event-stream
 ```
 
-请求：
+该接口先发送规则型事实，再发送英文 Markdown insight token。它只读取后端整理后的结构化组合快照、基金穿透摘要和风险提示，不接收前端传入的任意市值，不直接暴露数据库表，也不保存用户密钥。
 
-```json
-{
-  "portfolioId": 1,
-  "includeFundLookthrough": true,
-  "language": "zh-CN"
-}
-```
+本地配置：
 
-成功响应：
-
-```json
-{
-  "portfolioId": 1,
-  "generatedAt": "2026-07-24T08:30:00Z",
-  "provider": "LLM_PROVIDER",
-  "model": "configured-model-name",
-  "disclaimer": "This analysis is educational and does not constitute investment advice.",
-  "summary": "Your portfolio is diversified across stocks, funds, crypto, cash and deposits, but fund lookthrough shows some overlap with direct stock holdings.",
-  "keyFindings": [
-    {
-      "title": "Fund overlap",
-      "detail": "AAPL appears directly and inside VOO, so effective exposure is higher than the direct holding alone."
-    },
-    {
-      "title": "Liquidity buffer",
-      "detail": "Cash and bank deposits provide stable value but reduce growth exposure."
-    }
-  ],
-  "dataLimitations": [
-    "Fund holdings may lag the latest disclosure.",
-    "Crypto prices may use demo or cached data in MVP."
-  ]
-}
+```bash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+DEEPSEEK_API_KEY=<local-secret>
 ```
 
 安全规则：
 
-- API key 只放在后端环境变量，例如 `LLM_API_KEY`，不进入前端。
+- API key 只放在 `.env` 或后端运行环境变量，不提交到 Git，也不进入前端。
 - 后端向大模型发送最小必要字段，不发送用户姓名、账户号、数据库连接信息或原始异常。
-- 输出必须经过后端 schema 校验；无法解析时返回可理解错误，不把原始模型输出直接展示给用户。
-- 前端必须把大模型结论标记为“解释性分析”，不能显示成买入、卖出或收益预测。
+- LLM 只负责解释后端已计算的事实，不能重新计算 HHI、盈亏、穿透比例等核心数字。
+- LLM 未配置或失败时，接口仍返回 facts；前端只降级 AI 文本区域。
+- 前端必须把大模型结论标记为解释性分析，不能显示成买入、卖出或收益预测。
 
 ## 8. 安全约束
 

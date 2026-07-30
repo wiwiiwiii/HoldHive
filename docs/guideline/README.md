@@ -29,6 +29,13 @@ docs/design/
 - REST API 文档：`project/api_documentation_zh.md`
 - 蓝湖设计图说明：`../design/lanhu/README.md`
 
+## 当前发布状态
+
+- 当前正式交付 tag：`1.0.0`
+- `main`：稳定发布快照，用于最终展示或交付回看。
+- `qa`：后续文档、修复和功能集成的基准分支。
+- 文档更新流程：从 `qa` 创建 `docs/<topic>` 分支，PR 合回 `qa`；需要进入正式快照时再通过 `qa -> main` release PR 同步。
+
 ## 重新生成 PDF
 
 在仓库根目录运行：

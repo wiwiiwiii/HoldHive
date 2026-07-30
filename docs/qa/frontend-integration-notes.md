@@ -1,6 +1,13 @@
 # Frontend Integration Notes
 
-Use this after the backend holding update PR is merged into `qa`.
+Use this as a regression reference for the implemented holding update flow in `1.0.0`.
+
+Implementation status:
+
+- `frontend/src/api/portfolioApi.ts` includes `updateHolding(id, request, priceMode?)`.
+- `frontend/src/components/HoldingsPage.tsx` supports editing quantity and average purchase price.
+- Successful updates refresh holdings and trigger analysis refresh through the shared holdings-change callback.
+- Cash and bank deposit keep fixed average purchase price/current price at `1.00`.
 
 ## Backend Contract Added
 
@@ -32,14 +39,13 @@ Error responses:
 - `400 VALIDATION_FAILED` for missing or negative average purchase price.
 - `404 HOLDING_NOT_FOUND` when the id does not exist.
 
-## Member C Next Steps
+## Frontend Regression Notes
 
-1. Add an `updateHolding(id, request, priceMode?)` function in `frontend/src/api/portfolioApi.ts`.
-2. Add a small `UpdateHoldingRequest` type with `quantity` and `averagePurchasePrice`.
-3. Add an edit action in `HoldingsPage` beside delete, reusing the existing table row data as initial form values.
-4. After successful update, refresh both holdings and portfolio summary instead of calculating totals in the browser.
-5. Display API validation messages through the existing toast/error UI, not as raw JSON.
-6. For cash and bank deposit rows, either disable the average price field or show a hint that backend keeps it fixed at `1.00`.
+1. Edit a stock holding and confirm quantity, average purchase price, cost basis, market value, and floating P&L update after refresh.
+2. Edit a cash or bank-deposit holding and confirm backend keeps average purchase price/current price fixed at `1.00`.
+3. Confirm failed validation shows a short user-facing message instead of raw JSON.
+4. Confirm Settings data mode is passed to the update request and subsequent refresh.
+5. Confirm Analysis refreshes after a successful edit.
 
 ## Local Smoke Request
 

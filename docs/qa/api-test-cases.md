@@ -339,3 +339,52 @@ curl -i -X DELETE "http://localhost:8080/api/v1/holdings/1"
 
 - Existing holding -> `204 No Content`
 - Deleted or missing holding -> `404 Not Found`, `code: HOLDING_NOT_FOUND`
+
+## Portfolio Analysis and AI Insights
+
+### GET /api/v1/portfolio/analysis/insights
+
+```bash
+curl "http://localhost:8080/api/v1/portfolio/analysis/insights?priceMode=DEMO_ALLOWED"
+```
+
+Expected: `200 OK`, structured JSON facts with:
+
+- `overview`
+- `concentration`
+- `fundOverlap`
+- `lookThrough`
+- `sectorExposure`
+- `profitLoss`
+
+Cases to check:
+
+- [ ] Seeded portfolio returns non-empty facts.
+- [ ] `priceMode=LIVE_ONLY` does not fabricate demo prices.
+- [ ] Invalid `priceMode` -> `400 Bad Request`.
+
+### GET /api/v1/portfolio/analysis/insights/full
+
+```bash
+curl -N "http://localhost:8080/api/v1/portfolio/analysis/insights/full?priceMode=DEMO_ALLOWED"
+```
+
+Expected SSE sequence:
+
+```text
+event:facts
+data:{"type":"facts","payload":{...}}
+
+event:token
+data:{"type":"token","payload":"..."}
+
+event:done
+data:{"type":"done"}
+```
+
+Cases to check:
+
+- [ ] `facts` arrives before any AI token.
+- [ ] AI output is English Markdown text.
+- [ ] If `DEEPSEEK_API_KEY` is blank, the stream still returns `facts` and a concise fallback token.
+- [ ] Frontend Analysis keeps structured cards visible even if AI text degrades.
